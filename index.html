@@ -198,6 +198,8 @@ const PLAYERS = ["Thomas L.","JM B.","Hugo R.","Yann N.","Arnaud H.","Victor S."
 
 const LOGO_DATA_URI = "icon-512.png";
 const SESSION_KEY = "caisse-noire-session"; // {nom, role}
+const APP_VERSION_KEY = "caisse-noire-app-version";
+const APP_VERSION = "2026-07-01-1"; // À incrémenter à chaque mise à jour déployée
 const SEASON_START = new Date(2026, 8, 1);  // 1er septembre 2026
 const SEASON_END = new Date(2027, 5, 30);   // 30 juin 2027
 
@@ -210,6 +212,14 @@ let presenceEvenements = {}; // { eventId_nom: "Oui"/"Non" }
 
 let session = JSON.parse(localStorage.getItem(SESSION_KEY) || "null");
 if (session && !session.code) { session = null; localStorage.removeItem(SESSION_KEY); }
+
+// Si une nouvelle version de l'appli a été déployée, on déconnecte tout le monde
+// pour garantir que chacun recharge bien la dernière version et ses dernières données
+if (localStorage.getItem(APP_VERSION_KEY) !== APP_VERSION) {
+  session = null;
+  localStorage.removeItem(SESSION_KEY);
+  localStorage.setItem(APP_VERSION_KEY, APP_VERSION);
+}
 let currentPage = "home";
 let isOnline = false;
 let loginError = "";
