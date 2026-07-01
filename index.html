@@ -103,7 +103,10 @@
   .toggle-btn.absent { background: #b33; color: #fff; border-color: #b33; }
 
   .login-wrap { display: flex; align-items: center; justify-content: center; min-height: 85vh; padding: 16px; }
-  .login-card-outer { border-radius: 26px; padding: 2px; background: var(--grad); max-width: 360px; width: 100%; }
+  .login-card-outer { border-radius: 26px; padding: 2px; background: var(--grad); width: 100%; }
+  @media (min-width: 700px) {
+    .login-card-outer { max-width: 360px; }
+  }
   .login-card { background: #11141f; border: 1px solid rgba(47,107,255,0.28); border-radius: 24px; padding: 32px 26px; text-align: center; position: relative; overflow: hidden; }
   .login-card .login-glow { position: absolute; top: -60px; right: -60px; width: 180px; height: 180px; background: var(--glow); }
   .login-card img { height: 72px; margin-bottom: 14px; border-radius: 18px; position: relative; }
@@ -253,7 +256,7 @@ const PLAYERS = ["Thomas L.","JM B.","Hugo R.","Yann N.","Arnaud H.","Victor S."
 const LOGO_DATA_URI = "icon-512.png";
 const SESSION_KEY = "caisse-noire-session"; // {nom, role}
 const APP_VERSION_KEY = "caisse-noire-app-version";
-const APP_VERSION = "2026-07-01-17"; // À incrémenter à chaque mise à jour déployée
+const APP_VERSION = "2026-07-01-18"; // À incrémenter à chaque mise à jour déployée
 const SEASON_START = new Date(2026, 8, 1);  // 1er septembre 2026
 const SEASON_END = new Date(2027, 5, 30);   // 30 juin 2027
 
