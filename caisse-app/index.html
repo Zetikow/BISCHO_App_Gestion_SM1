@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<meta name="theme-color" content="#2f5fd6" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+<meta name="apple-mobile-web-app-title" content="SM1 BISCHO" />
+<link rel="manifest" href="manifest.json" />
+<link rel="apple-touch-icon" href="icon-192.png" />
+<title>SM1 - HBC BISCHO</title>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; padding: 0; background: #eef1f8; }
+  body { font-family: -apple-system, BlinkMacSystemFont, Arial, sans-serif; color: #1c2233; padding-bottom: env(safe-area-inset-bottom); }
+  #app { max-width: 100%; padding: 12px; }
+  .header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; padding-top: env(safe-area-inset-top); }
+  .header img { height: 42px; }
+  .header .title { font-size: 17px; font-weight: bold; color: #1c2233; }
+  .header .subtitle { font-size: 11px; color: #2f5fd6; }
+  .header .spacer { flex: 1; }
+  .logout-link { font-size: 11px; color: #6b7494; text-decoration: underline; cursor: pointer; }
+  .nav { display: flex; gap: 6px; margin-bottom: 12px; padding-bottom: 8px; position: sticky; top: 0; background: #eef1f8; z-index: 10; flex-wrap: nowrap; }
+  .nav button { flex: 1; min-width: 0; padding: 8px 4px; border: 1px solid #c9d3ea; border-radius: 10px; background: #fff; color: #2f5fd6; font-weight: 700; cursor: pointer; font-size: 15px; line-height: 1.15; white-space: normal; word-break: break-word; }
+  .nav button.active { background: #2f5fd6; color: #fff; border-color: #2f5fd6; }
+  .nav-extra-select { flex: 1; min-width: 0; max-width: 90px; padding: 8px 2px; border: 1px solid #c9d3ea; border-radius: 10px; background: #fff; color: #2f5fd6; font-weight: 700; font-size: 15px; }
+  .nav-extra-select.active { background: #2f5fd6; color: #fff; border-color: #2f5fd6; }
+  select, input { font-size: 15px; padding: 10px; border-radius: 8px; border: 1px solid #d4dae8; background: #fff; color: #1c2233; width: 100%; }
+  table { border-collapse: collapse; width: 100%; font-size: 11px; }
+  th, td { border: 1px solid #e1e6f0; padding: 4px; text-align: center; white-space: nowrap; color: #2a2f3d; }
+  th { background: #2f5fd6; color: #fff; position: sticky; top: 0; z-index: 5; }
+  td.action-name, th.action-name { text-align: left; min-width: 150px; font-weight: 500; background: #f3f6fc; }
+  tr.total-row td { font-weight: bold; background: #fff3d6; color: #a8740a; }
+  .cell-euro { font-size: 9px; color: #c14545; margin-top: 1px; }
+  .table-wrap { overflow-x: auto; max-height: 70vh; -webkit-overflow-scrolling: touch; border-radius: 10px; border: 1px solid #e1e6f0; }
+  .card { background: #fff; border: 1px solid #e3e7f1; border-radius: 14px; padding: 16px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(20,30,60,0.06); }
+  .big-number { font-size: 30px; font-weight: bold; color: #2f5fd6; }
+  .big-number.green { color: #2f9e58; }
+  .big-number.red { color: #c14545; }
+  .muted { color: #6b7494; font-size: 12px; }
+  .row-flex { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+  .pill { display: inline-block; padding: 5px 11px; border-radius: 14px; background: #fdeceb; color: #c14545; font-size: 11px; margin: 3px; border: 1px solid #f0c9c5; }
+  .btn { padding: 11px 14px; border-radius: 10px; border: none; background: #2f5fd6; color: #fff; cursor: pointer; font-size: 14px; font-weight: 500; width: 100%; }
+  .btn.secondary { background: #fff; color: #2f5fd6; border: 1px solid #c9d3ea; }
+  .status-bar { font-size: 11px; padding: 7px 10px; border-radius: 8px; margin-bottom: 10px; text-align: center; }
+  .status-online { background: #e6f6ec; color: #2f9e58; }
+  .status-offline { background: #fdeceb; color: #c14545; }
+  .entry-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid #eef0f6; }
+  .entry-row:last-child { border-bottom: none; }
+  .entry-name { flex: 1; font-size: 13px; color: #2a2f3d; }
+  .entry-value { font-size: 11px; color: #6b7494; margin-top: 2px; }
+  .entry-select { width: 76px; flex-shrink: 0; }
+  .presence-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid #eef0f6; }
+  .presence-row:last-child { border-bottom: none; }
+  .toggle-group { display: flex; gap: 6px; }
+  .toggle-btn { padding: 8px 14px; border-radius: 8px; border: 1px solid #d4dae8; background: #fff; color: #6b7494; font-size: 12px; cursor: pointer; }
+  .toggle-btn.present { background: #2f9e58; color: #fff; border-color: #2f9e58; }
+  .toggle-btn.absent { background: #c14545; color: #fff; border-color: #c14545; }
+  .badge { font-size: 10px; padding: 2px 7px; border-radius: 8px; background: #eef1f8; color: #6b7494; }
+  .login-wrap { display: flex; align-items: center; justify-content: center; min-height: 70vh; }
+  .login-card { background: #fff; border-radius: 16px; padding: 24px; max-width: 320px; width: 100%; box-shadow: 0 2px 8px rgba(20,30,60,0.08); text-align: center; }
+  .login-card img { height: 60px; margin-bottom: 10px; }
+  .login-error { color: #c14545; font-size: 12px; margin-top: 8px; }
+  .field-label { display: block; text-align: left; margin: 10px 0 4px; font-size: 12px; color: #6b7494; }
+  .paiement-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eef0f6; font-size: 12px; }
+</style>
+</head>
+<body>
+<div id="app">Chargement...</div>
+
+<script src="google-script-config.js"></script>
+<script>
+
+const ACTIONS = [
+  ["participation mensuelle", 5],
+  ["Retard entraînement 1 min", 1],
+  ["Retard entraînement 5 min", 2],
+  ["Retard entraînement 10 min ou +", 5],
+  ["Absence non justifié à l'entrainement", 10],
+  ["Retard match", 5],
+  ["Oubli tenu de match", 8],
+  ["Absence non justifié au match", 50],
+  ["Oubli de chasuble", 3],
+  ["Oubli de vêtement hors chasuble", 5],
+  ["Taxer une serviette de douche", 3],
+  ["Taxer du savon", 1],
+  ["Taxer de la crème", 0.5],
+  ["Carton Rouge direct", 10],
+  ["Carton rouge / Exclusion 2min répétée", 5],
+  ["2min pour avoir râler", 2],
+  ["Carton bleu", 15],
+  ["Pas de logo BISCHO pour le déplacement", 2],
+  ["Ballon dégueulasse (vraiment !)", 5],
+  ["Oubli du ballon (match / entrainement)", 4],
+  ["Taxer de l'eau", 2],
+  ["Pas présent repas après match domicile", 5],
+  ["Ne prend pas sa douche en déplacement", 10],
+  ["Nom dans le journal", 2],
+  ["Photo dans le journal", 4],
+  ["Pire action du match (+ déguisement)", 1],
+  ["Ballon dans la tête", 2],
+  ["Autre (à préciser)", 1],
+];
+
+const PLAYERS = ["Thomas L.","JM B.","Hugo R.","Yann N.","Arnaud H.","Victor S.","Romain J.","Volodia M.","Victor P.","Mattéo MP.","Gabriel W.","Basil L.","Brahim I.","Maximilien M.","Arthur M.","Damien P.","Alexis W.","Mathieu S.","Nicolas Z.","Robin S."];
+
+const LOGO_DATA_URI = "icon-512.png";
+const SESSION_KEY = "caisse-noire-session"; // {nom, role}
+const SEASON_START = new Date(2026, 8, 1);  // 1er septembre 2026
+const SEASON_END = new Date(2027, 5, 30);   // 30 juin 2027
+
+let grid = {};
+let comptes = []; // [[nom, role, code], ...]
+let presences = {}; // { "DD_MM_YYYY_Nom": "1"/"0" }
+let paiements = []; // [[id, joueur, montant, date, commentaire], ...]
+
+let session = JSON.parse(localStorage.getItem(SESSION_KEY) || "null");
+if (session && !session.code) { session = null; localStorage.removeItem(SESSION_KEY); }
+let currentPage = "home";
+let isOnline = false;
+let loginError = "";
+let loginNeedsSetup = null; // null = pas encore vérifié, true/false ensuite
+let loginSelectedNom = "";
+
+// ---------- Données ----------
+
+function initGrid() {
+  const g = {};
+  PLAYERS.forEach(p => {
+    g[p] = {};
+    ACTIONS.forEach((a, i) => { g[p][i] = i === 0 ? 10 : 0; });
+  });
+  return g;
+}
+
+function parseSheetData(rows) {
+  const g = {};
+  PLAYERS.forEach((p) => { g[p] = {}; });
+  for (let i = 0; i < ACTIONS.length; i++) {
+    const sheetRow = rows[i + 1];
+    if (!sheetRow) continue;
+    PLAYERS.forEach((p, pIndex) => {
+      const val = sheetRow[pIndex + 2];
+      g[p][i] = (typeof val === "number") ? val : (parseInt(val, 10) || 0);
+    });
+  }
+  return g;
+}
+
+function parsePresences(rows) {
+  const p = {};
+  for (let i = 1; i < rows.length; i++) {
+    const [date, joueur, present] = rows[i];
+    if (!date) continue;
+    const d = (date instanceof Date) ? formatDateKey(date) : String(date).slice(0, 10);
+    p[`${d}_${joueur}`] = String(present);
+  }
+  return p;
+}
+
+async function fetchAll() {
+  try {
+    const res = await fetch(GOOGLE_SCRIPT_URL + "?action=getAll");
+    if (!res.ok) throw new Error("bad response");
+    const data = await res.json();
+    grid = parseSheetData(data.grid);
+    comptes = data.comptes || [];
+    presences = parsePresences(data.presences || []);
+    paiements = (data.paiements || []).slice(1);
+    isOnline = true;
+  } catch (err) {
+    isOnline = false;
+  }
+  render();
+}
+
+function startPolling() {
+  fetchAll();
+  setInterval(fetchAll, 8000);
+}
+
+async function writeCell(player, actionIndex, value) {
+  grid[player][actionIndex] = value;
+  render();
+  const playerIndex = PLAYERS.indexOf(player);
+  const row = parseInt(actionIndex, 10) + 2;
+  const col = playerIndex + 3;
+  try {
+    await fetch(`${GOOGLE_SCRIPT_URL}?action=set&row=${row}&col=${col}&value=${value}&authNom=${encodeURIComponent(session.nom)}&authCode=${encodeURIComponent(session.code)}`);
+    isOnline = true;
+  } catch (err) { isOnline = false; }
+  render();
+}
+
+async function writePresence(dateKey, joueur, present) {
+  presences[`${dateKey}_${joueur}`] = present ? "Oui" : "Non";
+  render();
+  try {
+    const res = await fetch(`${GOOGLE_SCRIPT_URL}?action=setPresence&date=${dateKey}&joueur=${encodeURIComponent(joueur)}&present=${present ? "Oui" : "Non"}&authNom=${encodeURIComponent(session.nom)}&authCode=${encodeURIComponent(session.code)}`);
+    const data = await res.json();
+    if (!data.ok) { await fetchAll(); return; }
+    isOnline = true;
+  } catch (err) { isOnline = false; }
+  render();
+}
+
+async function addPaiement(joueur, montant, commentaire) {
+  try {
+    await fetch(`${GOOGLE_SCRIPT_URL}?action=addPaiement&joueur=${encodeURIComponent(joueur)}&montant=${montant}&commentaire=${encodeURIComponent(commentaire || "")}&authNom=${encodeURIComponent(session.nom)}&authCode=${encodeURIComponent(session.code)}`);
+    await fetchAll();
+  } catch (err) { isOnline = false; render(); }
+}
+
+async function updatePaiementApi(id, joueur, montant, commentaire) {
+  try {
+    await fetch(`${GOOGLE_SCRIPT_URL}?action=updatePaiement&id=${encodeURIComponent(id)}&joueur=${encodeURIComponent(joueur)}&montant=${montant}&commentaire=${encodeURIComponent(commentaire || "")}&authNom=${encodeURIComponent(session.nom)}&authCode=${encodeURIComponent(session.code)}`);
+    window.__editingPaiementId = null;
+    await fetchAll();
+  } catch (err) { isOnline = false; render(); }
+}
+
+async function deletePaiementApi(id) {
+  try {
+    await fetch(`${GOOGLE_SCRIPT_URL}?action=deletePaiement&id=${encodeURIComponent(id)}&authNom=${encodeURIComponent(session.nom)}&authCode=${encodeURIComponent(session.code)}`);
+    await fetchAll();
+  } catch (err) { isOnline = false; render(); }
+}
+
+async function checkAccountStatus(nom) {
+  try {
+    const res = await fetch(`${GOOGLE_SCRIPT_URL}?action=accountStatus&nom=${encodeURIComponent(nom)}`);
+    const data = await res.json();
+    loginNeedsSetup = data.ok ? data.needsSetup : false;
+  } catch (err) {
+    loginNeedsSetup = false;
+  }
+  render();
+}
+
+async function setInitialCode(nom, newCode) {
+  loginError = "";
+  try {
+    const res = await fetch(`${GOOGLE_SCRIPT_URL}?action=setCode&nom=${encodeURIComponent(nom)}&newCode=${encodeURIComponent(newCode)}`);
+    const data = await res.json();
+    if (data.ok) {
+      session = { nom, role: data.role, code: newCode };
+      localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+      currentPage = "home";
+      await fetchAll();
+    } else if (data.error === "already_set") {
+      loginError = "Un code existe déjà pour ce nom. Entre-le, ou demande à l'Admin de le réinitialiser (vide la case dans Google Sheet).";
+      loginNeedsSetup = false;
+      render();
+    } else {
+      loginError = "Le code doit comporter exactement 4 chiffres.";
+      render();
+    }
+  } catch (err) {
+    loginError = "Connexion impossible. Réessaie.";
+    render();
+  }
+}
+
+async function tryLogin(nom, code) {
+  loginError = "";
+  try {
+    const res = await fetch(`${GOOGLE_SCRIPT_URL}?action=login&nom=${encodeURIComponent(nom)}&code=${encodeURIComponent(code)}`);
+    const data = await res.json();
+    if (data.ok) {
+      session = { nom, role: data.role, code };
+      localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+      currentPage = "home";
+      await fetchAll();
+    } else {
+      loginError = "Nom ou code incorrect.";
+      render();
+    }
+  } catch (err) {
+    loginError = "Connexion impossible. Réessaie.";
+    render();
+  }
+}
+
+function logout() {
+  session = null;
+  localStorage.removeItem(SESSION_KEY);
+  render();
+}
+
+// ---------- Calculs ----------
+
+function playerTotal(p) {
+  let total = 0;
+  ACTIONS.forEach((a, i) => { total += (grid[p] && grid[p][i] || 0) * a[1]; });
+  return total;
+}
+
+function actionRowTotal(i) {
+  let total = 0;
+  PLAYERS.forEach(p => { total += (grid[p] && grid[p][i] || 0) * ACTIONS[i][1]; });
+  return total;
+}
+
+function grandTotal() {
+  let total = 0;
+  PLAYERS.forEach(p => { total += playerTotal(p); });
+  return total;
+}
+
+function totalPaye(joueur) {
+  return paiements.filter(r => r[1] === joueur).reduce((s, r) => s + (parseFloat(r[2]) || 0), 0);
+}
+
+function resteAPayer(joueur) {
+  return playerTotal(joueur) - totalPaye(joueur);
+}
+
+function fmt(n) {
+  n = Math.round(n * 10) / 10;
+  return Number.isInteger(n) ? n.toString() : n.toFixed(1);
+}
+
+function formatDateKey(d) {
+  return d.toISOString().slice(0, 10);
+}
+
+function formatDateFr(d) {
+  return d.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
+}
+
+function getActiveWeekTrainings() {
+  const now = new Date();
+  const day = now.getDay();
+  const monday = new Date(now);
+  const diffToMonday = (day === 0 ? -6 : 1 - day);
+  monday.setDate(now.getDate() + diffToMonday);
+  monday.setHours(0, 0, 0, 0);
+
+  let tuesday = new Date(monday); tuesday.setDate(monday.getDate() + 1);
+  let thursday = new Date(monday); thursday.setDate(monday.getDate() + 3);
+  const thursdayEnd = new Date(thursday); thursdayEnd.setHours(23, 59, 59, 999);
+
+  if (now > thursdayEnd) {
+    monday.setDate(monday.getDate() + 7);
+    tuesday.setDate(tuesday.getDate() + 7);
+    thursday.setDate(thursday.getDate() + 7);
+  }
+  return [tuesday, thursday];
+}
+
+function getSeasonWeeks() {
+  const weeks = [];
+  // trouve le premier mardi >= SEASON_START
+  let tuesday = new Date(SEASON_START);
+  while (tuesday.getDay() !== 2) tuesday.setDate(tuesday.getDate() + 1);
+  while (tuesday <= SEASON_END) {
+    const thursday = new Date(tuesday);
+    thursday.setDate(tuesday.getDate() + 2);
+    weeks.push([new Date(tuesday), thursday]);
+    tuesday.setDate(tuesday.getDate() + 7);
+  }
+  return weeks;
+}
+
+function formatDateShort(d) {
+  return d.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit" });
+}
+
+// ---------- Rendu ----------
+
+function render() {
+  const app = document.getElementById("app");
+
+  // Mémorise la position de défilement avant de reconstruire la page
+  const scrollY = window.scrollY;
+  const tableWrap = app.querySelector(".table-wrap");
+  const tableScrollLeft = tableWrap ? tableWrap.scrollLeft : 0;
+  const tableScrollTop = tableWrap ? tableWrap.scrollTop : 0;
+
+  if (!session) {
+    app.innerHTML = renderLogin();
+    attachLoginEvents();
+    return;
+  }
+
+  let html = `<div class="header">
+    <img src="${LOGO_DATA_URI}" alt="Logo HBC Bischoffsheim"/>
+    <div><div class="title">SM1 - HBC BISCHO</div><div class="subtitle">App de Gestion</div></div>
+    <div class="spacer"></div>
+    <div style="text-align:right;">
+      <div class="muted" style="margin-bottom:2px;">${session.nom} <span class="badge">${session.role}</span></div>
+      <span class="logout-link" id="logout-link">Se déconnecter</span>
+    </div>
+  </div>`;
+
+  html += `<div class="status-bar ${isOnline ? "status-online" : "status-offline"}">
+    ${isOnline ? "Connecté - synchro toutes les 8s" : "Hors ligne - nouvelle tentative..."}
+  </div>`;
+
+  const tabs = getTabsForRole(session.role);
+  const mainTabs = tabs.filter(t => t.main);
+  const extraTabs = tabs.filter(t => !t.main);
+
+  html += `<div class="nav">`;
+  html += mainTabs.map(t =>
+    `<button data-page="${t.id}" class="nav-btn ${currentPage === t.id ? 'active' : ''}">${t.label}</button>`
+  ).join("");
+  if (extraTabs.length > 0) {
+    html += `<select id="nav-extra" class="nav-extra-select">
+      <option value="">Plus</option>
+      ${extraTabs.map(t => `<option value="${t.id}" ${currentPage === t.id ? "selected" : ""}>${t.label}</option>`).join("")}
+    </select>`;
+  }
+  html += `</div>`;
+
+  if (currentPage === "home") html += renderHome();
+  else if (currentPage === "entry") html += renderEntry();
+  else if (currentPage === "table") html += renderTable();
+  else if (currentPage === "presence") html += renderPresencePage();
+  else if (currentPage === "paiements") html += renderPaiementsPage();
+
+  app.innerHTML = html;
+  attachEvents();
+
+  // Restaure la position de défilement après reconstruction
+  window.scrollTo(0, scrollY);
+  const newTableWrap = app.querySelector(".table-wrap");
+  if (newTableWrap) {
+    newTableWrap.scrollLeft = tableScrollLeft;
+    newTableWrap.scrollTop = tableScrollTop;
+  }
+}
+
+function getTabsForRole(role) {
+  const tabs = [
+    { id: "home", label: "Accueil", main: true },
+    { id: "entry", label: "Saisir une action", main: true },
+    { id: "table", label: "Récap caisse noire", main: true },
+  ];
+  if (role === "Coach" || role === "Admin") tabs.push({ id: "presence", label: "Présence", main: false });
+  if (role === "Admin") tabs.push({ id: "paiements", label: "Paiements", main: false });
+  return tabs;
+}
+
+function renderLogin() {
+  let formHtml = "";
+  if (loginSelectedNom && loginNeedsSetup === true) {
+    formHtml = `
+      <div class="muted" style="margin-top:10px;">Première connexion pour <b>${loginSelectedNom}</b> : choisis ton code.</div>
+      <label class="field-label">Nouveau code (4 chiffres)</label>
+      <input id="login-newcode" type="password" inputmode="numeric" maxlength="4" placeholder="••••" />
+      <label class="field-label">Confirme le code</label>
+      <input id="login-newcode2" type="password" inputmode="numeric" maxlength="4" placeholder="••••" />
+      <div style="margin-top:16px;"><button class="btn" id="setcode-btn">Définir mon code et me connecter</button></div>
+    `;
+  } else if (loginSelectedNom && loginNeedsSetup === false) {
+    formHtml = `
+      <label class="field-label">Code (4 chiffres)</label>
+      <input id="login-code" type="password" inputmode="numeric" maxlength="4" placeholder="••••" />
+      <div style="margin-top:16px;"><button class="btn" id="login-btn">Se connecter</button></div>
+    `;
+  } else if (loginSelectedNom && loginNeedsSetup === null) {
+    formHtml = `<div class="muted" style="margin-top:10px;">Vérification...</div>`;
+  }
+
+  return `<div class="login-wrap"><div class="login-card">
+    <img src="${LOGO_DATA_URI}" alt="Logo"/>
+    <div style="font-weight:bold; font-size:16px; margin-bottom:4px;">SM1 - HBC BISCHO</div>
+    <div class="muted">App de Gestion</div>
+    <label class="field-label">Ton nom</label>
+    <select id="login-nom">
+      <option value="">-- Choisir --</option>
+      ${PLAYERS.map(p => `<option value="${p}" ${p === loginSelectedNom ? "selected" : ""}>${p}</option>`).join("")}
+      <option value="Coach" ${loginSelectedNom === "Coach" ? "selected" : ""}>Coach</option>
+      <option value="Admin" ${loginSelectedNom === "Admin" ? "selected" : ""}>Admin</option>
+    </select>
+    ${formHtml}
+    ${loginError ? `<div class="login-error">${loginError}</div>` : ""}
+  </div></div>`;
+}
+
+function attachLoginEvents() {
+  const nomSelect = document.getElementById("login-nom");
+  if (nomSelect) nomSelect.onchange = (e) => {
+    loginSelectedNom = e.target.value;
+    loginNeedsSetup = null;
+    loginError = "";
+    render();
+    if (loginSelectedNom) checkAccountStatus(loginSelectedNom);
+  };
+
+  const btn = document.getElementById("login-btn");
+  if (btn) btn.onclick = () => {
+    const code = document.getElementById("login-code").value;
+    if (!loginSelectedNom || !code) { loginError = "Choisis ton nom et entre ton code."; render(); return; }
+    tryLogin(loginSelectedNom, code);
+  };
+
+  const setCodeBtn = document.getElementById("setcode-btn");
+  if (setCodeBtn) setCodeBtn.onclick = () => {
+    const c1 = document.getElementById("login-newcode").value;
+    const c2 = document.getElementById("login-newcode2").value;
+    if (!/^\d{4}$/.test(c1)) { loginError = "Le code doit comporter exactement 4 chiffres."; render(); return; }
+    if (c1 !== c2) { loginError = "Les deux codes ne correspondent pas."; render(); return; }
+    setInitialCode(loginSelectedNom, c1);
+  };
+}
+
+function renderHome() {
+  const isPlayerLike = PLAYERS.includes(session.nom) || session.role === "Admin";
+  let html = "";
+
+  if (PLAYERS.includes(session.nom)) {
+    const total = playerTotal(session.nom);
+    const lines = ACTIONS.map((a, i) => ({ name: a[0], val: a[1], count: (grid[session.nom] && grid[session.nom][i]) || 0 }))
+      .filter(l => l.count > 0);
+
+    html += `<div class="card">
+      <div class="muted">Total caisse noire</div>
+      <div class="big-number">${fmt(total)} €</div>
+    </div>`;
+
+    html += `<div class="card">
+      <div class="muted" style="margin-bottom:8px;">Détail des actions enregistrées</div>`;
+    if (lines.length === 0) {
+      html += `<div class="muted">Aucune action enregistrée pour le moment.</div>`;
+    } else {
+      lines.forEach(l => { html += `<span class="pill">${l.name} ×${fmt(l.count)} = ${fmt(l.count * l.val)} €</span>`; });
+    }
+    html += `</div>`;
+
+    const rank = PLAYERS.map(p => ({ p, t: playerTotal(p) })).sort((a, b) => b.t - a.t);
+    const myRank = rank.findIndex(r => r.p === session.nom) + 1;
+    html += `<div class="card">
+      <div class="muted">Classement</div>
+      <div style="font-size:18px; font-weight:bold; margin-top:4px;">${myRank}e sur ${PLAYERS.length}</div>
+      <div class="muted" style="margin-top:8px;">Total caisse de l'équipe : ${fmt(grandTotal())} €</div>
+    </div>`;
+  } else {
+    html += `<div class="card"><div class="muted">Bienvenue, ${session.nom}.</div></div>`;
+  }
+
+  // Pointage présence (Joueur + Admin)
+  if (PLAYERS.includes(session.nom) || session.role === "Admin") {
+    html += renderPresenceWidget(session.nom);
+  }
+
+  return html;
+}
+
+function renderPresenceWidget(nom) {
+  if (!PLAYERS.includes(nom)) return "";
+  const [tuesday, thursday] = getActiveWeekTrainings();
+  const days = [tuesday, thursday];
+  let html = `<div class="card">
+    <div class="muted" style="margin-bottom:8px;">Présence entraînement - semaine du ${formatDateFr(tuesday).split(" ").slice(1).join(" ")}</div>`;
+  days.forEach(d => {
+    const key = formatDateKey(d);
+    const val = presences[`${key}_${nom}`];
+    html += `<div class="presence-row">
+      <div>${formatDateFr(d)}</div>
+      <div class="toggle-group">
+        <button class="toggle-btn ${val === "Oui" ? "present" : ""}" data-presence-date="${key}" data-presence-val="1">Présent</button>
+        <button class="toggle-btn ${val === "Non" ? "absent" : ""}" data-presence-date="${key}" data-presence-val="0">Absent</button>
+      </div>
+    </div>`;
+  });
+  html += `</div>`;
+  return html;
+}
+
+function renderEntry() {
+  let html = `<div class="card">
+    <label class="muted">Qui a fait l'action ?</label><br/>
+    <select id="entry-target" style="margin-top:6px;">
+      ${PLAYERS.map(p => `<option value="${p}" ${p === (window.__entryTarget || session.nom) ? "selected" : ""}>${p}</option>`).join("")}
+    </select>
+  </div>`;
+
+  const target = window.__entryTarget || (PLAYERS.includes(session.nom) ? session.nom : PLAYERS[0]);
+
+  html += `<div class="card" style="padding: 4px 16px;">`;
+  ACTIONS.forEach((a, i) => {
+    const count = (grid[target] && grid[target][i]) || 0;
+    html += `<div class="entry-row">
+      <div>
+        <div class="entry-name">${a[0]}</div>
+        <div class="entry-value">${fmt(a[1])} € / unité ${count > 0 ? "· " + fmt(count * a[1]) + " €" : ""}</div>
+      </div>
+      <select class="entry-select cell-select" data-player="${target}" data-action="${i}">
+        ${Array.from({length: 51}, (_, v) => `<option value="${v}" ${count === v ? "selected" : ""}>${v}</option>`).join("")}
+      </select>
+    </div>`;
+  });
+  html += `</div>`;
+
+  html += `<div class="card">
+    <div class="muted">Total de ${target}</div>
+    <div class="big-number">${fmt(playerTotal(target))} €</div>
+  </div>`;
+
+  return html;
+}
+
+function renderTable() {
+  let html = `<div class="row-flex">
+    <button class="btn secondary" id="export-csv">Exporter CSV</button>
+  </div>`;
+  html += `<div class="table-wrap"><table>
+    <thead><tr>
+      <th class="action-name">Action</th>
+      <th>Val.</th>
+      ${PLAYERS.map(p => `<th>${p}</th>`).join("")}
+      <th>Total</th>
+    </tr></thead><tbody>`;
+
+  ACTIONS.forEach((a, i) => {
+    const rowTotal = actionRowTotal(i);
+    html += `<tr>
+      <td class="action-name">${a[0]}</td>
+      <td>${fmt(a[1])}€</td>
+      ${PLAYERS.map(p => {
+        const count = (grid[p] && grid[p][i]) || 0;
+        const cellValue = count * a[1];
+        return `<td>
+          <select data-player="${p}" data-action="${i}" class="cell-select" style="width:54px; padding:3px; font-size:11px;">
+            ${Array.from({length: 51}, (_, v) => `<option value="${v}" ${count === v ? "selected" : ""}>${v}</option>`).join("")}
+          </select>
+          <div class="cell-euro">${fmt(cellValue)}€</div>
+        </td>`;
+      }).join("")}
+      <td>${fmt(rowTotal)}€</td>
+    </tr>`;
+  });
+
+  html += `<tr class="total-row">
+    <td class="action-name">TOTAL</td>
+    <td></td>
+    ${PLAYERS.map(p => `<td>${fmt(playerTotal(p))}€</td>`).join("")}
+    <td>${fmt(grandTotal())}€</td>
+  </tr>`;
+
+  html += `</tbody></table></div>`;
+  return html;
+}
+
+function renderPresencePage() {
+  const weeks = getSeasonWeeks();
+  const [activeTuesday] = getActiveWeekTrainings();
+  const activeKey = formatDateKey(activeTuesday);
+
+  // Moyenne de présence par joueur sur la saison (sur les jours renseignés uniquement)
+  const stats = PLAYERS.map(p => {
+    let oui = 0, total = 0;
+    weeks.forEach(([tue, thu]) => {
+      [tue, thu].forEach(d => {
+        const val = presences[`${formatDateKey(d)}_${p}`];
+        if (val === "Oui" || val === "Non") {
+          total++;
+          if (val === "Oui") oui++;
+        }
+      });
+    });
+    return { p, pct: total > 0 ? (oui / total) * 100 : null, oui, total };
+  });
+
+  let html = `<div class="card">
+    <div class="muted" style="margin-bottom:8px;">Moyenne de présence sur la saison</div>`;
+  stats.slice().sort((a, b) => (b.pct ?? -1) - (a.pct ?? -1)).forEach(s => {
+    const label = s.pct === null ? "Pas de donnée" : `${fmt(s.pct)} % (${s.oui}/${s.total})`;
+    const color = s.pct === null ? "#9aa6c4" : (s.pct >= 75 ? "#2f9e58" : (s.pct >= 50 ? "#a8740a" : "#c14545"));
+    html += `<div class="paiement-row"><div>${s.p}</div><div style="color:${color}; font-weight:600;">${label}</div></div>`;
+  });
+  html += `</div>`;
+
+  // Récap pour les entraînements de la semaine en cours (mardi + jeudi)
+  const [activeTue, activeThu] = getActiveWeekTrainings();
+  html += `<div class="card">
+    <div class="muted" style="margin-bottom:8px;">Présences prévues - semaine en cours</div>`;
+  [activeTue, activeThu].forEach(d => {
+    const key = formatDateKey(d);
+    let oui = 0, non = 0;
+    PLAYERS.forEach(p => {
+      const val = presences[`${key}_${p}`];
+      if (val === "Oui") oui++;
+      else if (val === "Non") non++;
+    });
+    const renseigne = oui + non;
+    html += `<div class="paiement-row">
+      <div>${formatDateFr(d)}</div>
+      <div><span style="color:#2f9e58; font-weight:600;">${oui} présents</span> · <span style="color:#c14545;">${non} absents</span> <span class="muted">(${renseigne}/${PLAYERS.length} renseignés)</span></div>
+    </div>`;
+  });
+  html += `</div>`;
+
+  html += `<div class="card muted">Vue d'ensemble - chaque colonne = une semaine (Mardi / Jeudi). La semaine en cours est surlignée.</div>`;
+
+  html += `<div class="table-wrap"><table>
+    <thead>
+      <tr>
+        <th class="action-name" rowspan="2">Joueur</th>
+        ${weeks.map(([tue]) => `<th colspan="2" style="${formatDateKey(tue) === activeKey ? 'background:#1a4fc4;' : ''}">${formatDateShort(tue)}</th>`).join("")}
+      </tr>
+      <tr>
+        ${weeks.map(([tue, thu]) => `
+          <th style="font-size:10px; ${formatDateKey(tue) === activeKey ? 'background:#1a4fc4;' : ''}">Ma</th>
+          <th style="font-size:10px; ${formatDateKey(tue) === activeKey ? 'background:#1a4fc4;' : ''}">Je</th>
+        `).join("")}
+      </tr>
+    </thead>
+    <tbody>`;
+
+  PLAYERS.forEach(p => {
+    html += `<tr><td class="action-name">${p}</td>`;
+    weeks.forEach(([tue, thu]) => {
+      [tue, thu].forEach(d => {
+        const key = formatDateKey(d);
+        const val = presences[`${key}_${p}`];
+        const symbol = val === "Oui" ? "Oui" : (val === "Non" ? "Non" : "·");
+        const color = val === "Oui" ? "#2f9e58" : (val === "Non" ? "#c14545" : "#c7cce0");
+        html += `<td style="color:${color}; font-weight:bold;">${symbol}</td>`;
+      });
+    });
+    html += `</tr>`;
+  });
+
+  html += `</tbody></table></div>`;
+  return html;
+}
+
+function renderPaiementsPage() {
+  let html = `<div class="card">
+    <div class="muted" style="margin-bottom:8px;">Enregistrer un paiement reçu</div>
+    <select id="paiement-joueur">
+      ${PLAYERS.map(p => `<option value="${p}">${p}</option>`).join("")}
+    </select>
+    <input id="paiement-montant" type="number" step="0.5" placeholder="Montant en €" style="margin-top:8px;" />
+    <input id="paiement-commentaire" type="text" placeholder="Commentaire (optionnel)" style="margin-top:8px;" />
+    <div style="margin-top:10px;"><button class="btn" id="paiement-add">Enregistrer le paiement</button></div>
+  </div>`;
+
+  html += `<div class="card"><div class="muted" style="margin-bottom:8px;">Reste à payer par joueur</div>`;
+  PLAYERS.slice().sort((a, b) => resteAPayer(b) - resteAPayer(a)).forEach(p => {
+    const reste = resteAPayer(p);
+    const color = reste > 0 ? "#c14545" : "#2f9e58";
+    html += `<div class="paiement-row"><div>${p}</div><div style="color:${color}; font-weight:600;">${fmt(reste)} €</div></div>`;
+  });
+  const totalDu = grandTotal();
+  const totalPayeAll = paiements.reduce((s, r) => s + (parseFloat(r[2]) || 0), 0);
+  html += `<div class="paiement-row" style="border-top:2px solid #2f5fd6; margin-top:6px; padding-top:8px; font-weight:bold;">
+    <div>Total dû : ${fmt(totalDu)} € · Total payé : ${fmt(totalPayeAll)} €</div>
+  </div></div>`;
+
+  if (paiements.length > 0) {
+    html += `<div class="card"><div class="muted" style="margin-bottom:8px;">Historique des paiements</div>`;
+    paiements.slice().reverse().forEach(r => {
+      const [id, joueur, montant, date, commentaire] = r;
+      if (window.__editingPaiementId === id) {
+        html += `<div class="paiement-row" style="display:block; padding:10px 0;">
+          <select id="edit-joueur-${id}" style="margin-bottom:6px;">
+            ${PLAYERS.map(p => `<option value="${p}" ${p === joueur ? "selected" : ""}>${p}</option>`).join("")}
+          </select>
+          <input id="edit-montant-${id}" type="number" step="0.5" value="${montant}" style="margin-bottom:6px;" />
+          <input id="edit-commentaire-${id}" type="text" value="${commentaire || ""}" placeholder="Commentaire" style="margin-bottom:8px;" />
+          <div class="row-flex">
+            <button class="btn" style="flex:1;" data-save-paiement="${id}">Enregistrer</button>
+            <button class="btn secondary" style="flex:1;" data-cancel-edit-paiement="1">Annuler</button>
+          </div>
+        </div>`;
+      } else {
+        html += `<div class="paiement-row">
+          <div>${joueur} ${commentaire ? "(" + commentaire + ")" : ""}</div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span>${fmt(parseFloat(montant))} € - ${date}</span>
+            <span style="cursor:pointer;" data-edit-paiement="${id}">✏️</span>
+            <span style="cursor:pointer;" data-delete-paiement="${id}">🗑️</span>
+          </div>
+        </div>`;
+      }
+    });
+    html += `</div>`;
+  }
+
+  return html;
+}
+
+// ---------- Events ----------
+
+function attachEvents() {
+  document.querySelectorAll(".nav-btn").forEach(btn => {
+    btn.onclick = () => { currentPage = btn.dataset.page; render(); };
+  });
+
+  const navExtra = document.getElementById("nav-extra");
+  if (navExtra) navExtra.onchange = (e) => {
+    if (e.target.value) { currentPage = e.target.value; render(); }
+  };
+
+  const logoutLink = document.getElementById("logout-link");
+  if (logoutLink) logoutLink.onclick = logout;
+
+  const entryTarget = document.getElementById("entry-target");
+  if (entryTarget) entryTarget.onchange = (e) => { window.__entryTarget = e.target.value; render(); };
+
+  document.querySelectorAll(".cell-select").forEach(sel => {
+    sel.onchange = (e) => {
+      const p = e.target.dataset.player;
+      const i = e.target.dataset.action;
+      writeCell(p, i, parseInt(e.target.value, 10));
+    };
+  });
+
+  document.querySelectorAll("[data-presence-date]").forEach(btn => {
+    btn.onclick = (e) => {
+      const date = e.target.dataset.presenceDate;
+      const val = e.target.dataset.presenceVal === "1";
+      writePresence(date, session.nom, val);
+    };
+  });
+
+  const exportBtn = document.getElementById("export-csv");
+  if (exportBtn) exportBtn.onclick = exportCSV;
+
+  const paiementAdd = document.getElementById("paiement-add");
+  if (paiementAdd) paiementAdd.onclick = () => {
+    const joueur = document.getElementById("paiement-joueur").value;
+    const montant = parseFloat(document.getElementById("paiement-montant").value);
+    const commentaire = document.getElementById("paiement-commentaire").value;
+    if (!joueur || !montant) return;
+    addPaiement(joueur, montant, commentaire);
+  };
+
+  document.querySelectorAll("[data-edit-paiement]").forEach(el => {
+    el.onclick = () => { window.__editingPaiementId = el.dataset.editPaiement; render(); };
+  });
+
+  document.querySelectorAll("[data-cancel-edit-paiement]").forEach(el => {
+    el.onclick = () => { window.__editingPaiementId = null; render(); };
+  });
+
+  document.querySelectorAll("[data-save-paiement]").forEach(el => {
+    el.onclick = () => {
+      const id = el.dataset.savePaiement;
+      const joueur = document.getElementById(`edit-joueur-${id}`).value;
+      const montant = parseFloat(document.getElementById(`edit-montant-${id}`).value);
+      const commentaire = document.getElementById(`edit-commentaire-${id}`).value;
+      if (!joueur || !montant) return;
+      updatePaiementApi(id, joueur, montant, commentaire);
+    };
+  });
+
+  document.querySelectorAll("[data-delete-paiement]").forEach(el => {
+    el.onclick = () => {
+      const id = el.dataset.deletePaiement;
+      if (confirm("Supprimer ce paiement ? Cette action est irréversible.")) {
+        deletePaiementApi(id);
+      }
+    };
+  });
+}
+
+function exportCSV() {
+  let rows = [["Action", "Valeur (€)", ...PLAYERS, "TOTAL Action (€)"]];
+  ACTIONS.forEach((a, i) => {
+    rows.push([a[0], a[1], ...PLAYERS.map(p => (grid[p] && grid[p][i]) || 0), actionRowTotal(i)]);
+  });
+  rows.push(["TOTAL Joueur (€)", "", ...PLAYERS.map(p => playerTotal(p)), grandTotal()]);
+  const csv = rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(";")).join("\r\n");
+  const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "caisse_noire_export.csv";
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("sw.js").catch(() => {});
+  });
+}
+
+grid = initGrid();
+render();
+if (session) startPolling();
+</script>
+</body>
+</html>
