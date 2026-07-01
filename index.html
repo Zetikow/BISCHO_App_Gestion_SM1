@@ -22,7 +22,7 @@
   }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body { margin: 0; padding: 0; background: #07080d; }
-  body { font-family: 'Archivo', -apple-system, BlinkMacSystemFont, sans-serif; color: #e8e8ee; padding-bottom: calc(78px + env(safe-area-inset-bottom)); }
+  body { font-family: 'Archivo', -apple-system, BlinkMacSystemFont, sans-serif; color: #e8e8ee; padding-bottom: calc(92px + env(safe-area-inset-bottom)); }
   #app { max-width: 100%; padding: 12px; }
   .header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; padding-top: env(safe-area-inset-top); }
   .header img { height: 36px; border-radius: 9px; }
@@ -32,22 +32,23 @@
   .logout-link { font-size: 11px; color: #5a6b8c; text-decoration: underline; cursor: pointer; }
   .badge { font-size: 9px; padding: 2px 8px; border-radius: 8px; background: #1a1f30; color: var(--accent); border: 1px solid #243049; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; }
 
-  .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: #0c0e16; border-top: 1px solid #1c2333; display: flex; padding: 8px 4px calc(8px + env(safe-area-inset-bottom)); z-index: 50; }
+  .bottom-nav { position: fixed; bottom: 10px; left: 10px; right: 10px; background: #11141f; border: 1px solid #1c2333; border-radius: 22px; display: flex; padding: 10px 6px calc(10px + env(safe-area-inset-bottom)); z-index: 50; box-shadow: 0 8px 30px rgba(0,0,0,0.45); }
   .bottom-nav button, .bottom-nav .bn-select-wrap { flex: 1; min-width: 0; }
-  .bottom-nav button { display: flex; flex-direction: column; align-items: center; gap: 3px; background: none; border: none; color: #5a6b8c; font-family: 'Archivo', sans-serif; font-weight: 700; font-size: 9px; text-transform: uppercase; letter-spacing: 0.3px; padding: 5px 2px; cursor: pointer; transition: transform 0.12s, color 0.15s; }
+  .bottom-nav button { display: flex; flex-direction: column; align-items: center; gap: 4px; background: none; border: none; color: #5a6b8c; font-family: 'Archivo', sans-serif; font-weight: 700; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.3px; padding: 6px 2px; cursor: pointer; transition: transform 0.12s, color 0.15s; }
   .bottom-nav button:active { transform: scale(0.9); }
   .bottom-nav button.active { color: var(--accent); }
   .bottom-nav button.active svg { filter: drop-shadow(0 0 6px rgba(47,107,255,0.6)); }
-  .bottom-nav svg { width: 20px; height: 20px; }
+  .bottom-nav svg { width: 24px; height: 24px; }
   .bn-select-wrap { position: relative; display: flex; flex-direction: column; align-items: center; }
-  .bn-select-wrap svg { width: 20px; height: 20px; color: #5a6b8c; margin-bottom: 3px; pointer-events: none; }
+  .bn-select-wrap svg { width: 24px; height: 24px; color: #5a6b8c; margin-bottom: 4px; pointer-events: none; }
   .bn-select-wrap.active svg { color: var(--accent); filter: drop-shadow(0 0 6px rgba(47,107,255,0.6)); }
   .bn-select-wrap select { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
-  .bn-select-label { font-family: 'Archivo', sans-serif; font-weight: 700; font-size: 9px; text-transform: uppercase; letter-spacing: 0.3px; color: #5a6b8c; pointer-events: none; }
+  .bn-select-label { font-family: 'Archivo', sans-serif; font-weight: 700; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.3px; color: #5a6b8c; pointer-events: none; }
   .bn-select-wrap.active .bn-select-label { color: var(--accent); }
 
-  select, input { font-size: 15px; padding: 10px; border-radius: 10px; border: 1px solid #1c2333; background: #11141f; color: #e8e8ee; width: 100%; font-family: 'Archivo', sans-serif; }
+  select, input { font-size: 15px; padding: 10px; border-radius: 10px; border: 1px solid #1c2333; background: #11141f; color: #e8e8ee; width: 100%; font-family: 'Archivo', sans-serif; color-scheme: dark; }
   select:focus, input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  input[type="date"], input[type="time"] { min-height: 42px; }
   table { border-collapse: collapse; width: 100%; font-size: 11px; }
   th, td { border: 1px solid #1c2333; padding: 5px 4px; text-align: center; white-space: nowrap; color: #c3ccde; }
   th { background: #151827; color: #fff; position: sticky; top: 0; z-index: 5; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; font-size: 10px; }
@@ -123,6 +124,8 @@
 
   .add-form { background: #0d1018; border: 1px dashed #243049; border-radius: 14px; padding: 14px; margin-bottom: 12px; }
   .add-form input, .add-form select { margin-bottom: 8px; }
+  .add-form-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .add-form-row > div { flex: 1; min-width: 130px; }
   .add-toggle { width: 100%; padding: 11px; border-radius: 12px; border: 1px dashed #2f3a52; background: transparent; color: var(--accent); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 12px; cursor: pointer; font-family: 'Archivo', sans-serif; }
 </style>
 </head>
@@ -498,6 +501,17 @@ function render() {
   const tableScrollLeft = tableWrap ? tableWrap.scrollLeft : 0;
   const tableScrollTop = tableWrap ? tableWrap.scrollTop : 0;
 
+  // Mémorise les valeurs des champs en cours de saisie (formulaires) pour ne pas
+  // les effacer lors du rafraîchissement automatique toutes les 8 secondes
+  const fieldValues = {};
+  app.querySelectorAll("input[id], select[id], textarea[id]").forEach(el => {
+    fieldValues[el.id] = el.value;
+  });
+  const active = document.activeElement;
+  const activeId = active && active.id ? active.id : null;
+  const activeSelStart = active && typeof active.selectionStart === "number" ? active.selectionStart : null;
+  const activeSelEnd = active && typeof active.selectionEnd === "number" ? active.selectionEnd : null;
+
   if (!session) {
     app.innerHTML = renderLogin();
     attachLoginEvents();
@@ -558,6 +572,21 @@ function render() {
   if (newTableWrap) {
     newTableWrap.scrollLeft = tableScrollLeft;
     newTableWrap.scrollTop = tableScrollTop;
+  }
+
+  // Restaure les valeurs de formulaire en cours de saisie
+  Object.keys(fieldValues).forEach(id => {
+    const el = document.getElementById(id);
+    if (el && el.value !== fieldValues[id]) el.value = fieldValues[id];
+  });
+  if (activeId) {
+    const el = document.getElementById(activeId);
+    if (el && typeof el.focus === "function") {
+      el.focus();
+      if (activeSelStart !== null && typeof el.setSelectionRange === "function") {
+        try { el.setSelectionRange(activeSelStart, activeSelEnd); } catch (e) {}
+      }
+    }
   }
 }
 
@@ -753,10 +782,10 @@ function renderAgenda() {
     html += `<button class="add-toggle" id="toggle-add-event">${showAddEvent ? "− Fermer" : "+ Ajouter un événement"}</button>`;
     if (showAddEvent) {
       html += `<div class="add-form">
-        <label class="field-label">Date</label>
-        <input id="ev-date" type="date" />
-        <label class="field-label">Heure</label>
-        <input id="ev-heure" type="time" />
+        <div class="add-form-row">
+          <div><label class="field-label">Date</label><input id="ev-date" type="date" /></div>
+          <div><label class="field-label">Heure</label><input id="ev-heure" type="time" /></div>
+        </div>
         <label class="field-label">Type</label>
         <select id="ev-type">
           <option value="Match">Match</option>
