@@ -32,6 +32,18 @@
   .logout-link { font-size: 11px; color: #5a6b8c; text-decoration: underline; cursor: pointer; }
   .badge { font-size: 9px; padding: 2px 8px; border-radius: 8px; background: #1a1f30; color: var(--accent); border: 1px solid #243049; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; }
 
+  .avatar-wrap { position: relative; }
+  .avatar-btn { width: 38px; height: 38px; border-radius: 50%; background: var(--grad); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; cursor: pointer; transition: transform 0.12s; flex-shrink: 0; }
+  .avatar-btn:active, .avatar-btn.tap-active { transform: scale(0.92); }
+  .avatar-menu { position: absolute; top: 46px; right: 0; background: #11141f; border: 1px solid #1c2333; border-radius: 14px; padding: 10px; min-width: 190px; z-index: 60; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+  .avatar-menu-name { font-size: 13px; font-weight: 800; color: #fff; padding: 4px 6px 2px; }
+  .avatar-menu-role { margin: 0 6px 8px; }
+  .avatar-menu-item { padding: 11px 6px; font-size: 12px; font-weight: 700; color: #c3ccde; cursor: pointer; border-top: 1px solid #1a2030; transition: background 0.12s; border-radius: 8px; }
+  .avatar-menu-item:hover, .avatar-menu-item.tap-active { background: #1a1f30; }
+  .avatar-menu-item.disabled { color: #5a6b8c; cursor: default; }
+  .avatar-menu-item.disabled:hover, .avatar-menu-item.disabled.tap-active { background: transparent; }
+  .avatar-menu-item.danger { color: #ff5a5a; }
+
   .bottom-nav { position: fixed; bottom: 10px; left: 10px; right: 10px; background: #11141f; border: 1px solid #1c2333; border-radius: 22px; display: flex; padding: 10px 6px calc(10px + env(safe-area-inset-bottom)); z-index: 50; box-shadow: 0 8px 30px rgba(0,0,0,0.45); }
   .bottom-nav button, .bottom-nav .bn-select-wrap { flex: 1; min-width: 0; }
   .bottom-nav button { display: flex; flex-direction: column; align-items: center; gap: 4px; background: none; border: none; color: #5a6b8c; font-family: 'Archivo', sans-serif; font-weight: 700; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.3px; padding: 6px 2px; cursor: pointer; transition: transform 0.12s, color 0.15s; }
@@ -180,6 +192,10 @@
   .stat-sub { font-size: 9px; color: #5a6b8c; margin-top: 2px; }
 
   .stat-bar-row { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; background: #0d1018; border: 1px solid #1c2333; border-radius: 12px; padding: 12px 14px; font-size: 12px; margin-bottom: 4px; }
+  .pay-summary { background: var(--grad); border-radius: 16px; padding: 18px; margin-bottom: 14px; color: #fff; }
+  .pay-summary-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; opacity: 0.9; font-weight: 800; }
+  .pay-summary-val { font-size: 32px; font-weight: 900; letter-spacing: -1px; margin-top: 4px; }
+  .pay-summary-sub { font-size: 12px; opacity: 0.9; margin-top: 4px; font-weight: 600; }
   .pointer-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #1a2030; }
   .pointer-row:last-child { border-bottom: none; }
   .add-toggle { width: 100%; padding: 11px; border-radius: 12px; border: 1px dashed #2f3a52; background: transparent; color: var(--accent); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 12px; cursor: pointer; font-family: 'Archivo', sans-serif; }
@@ -227,7 +243,7 @@ const PLAYERS = ["Thomas L.","JM B.","Hugo R.","Yann N.","Arnaud H.","Victor S."
 const LOGO_DATA_URI = "icon-512.png";
 const SESSION_KEY = "caisse-noire-session"; // {nom, role}
 const APP_VERSION_KEY = "caisse-noire-app-version";
-const APP_VERSION = "2026-07-01-10"; // À incrémenter à chaque mise à jour déployée
+const APP_VERSION = "2026-07-01-13"; // À incrémenter à chaque mise à jour déployée
 const SEASON_START = new Date(2026, 8, 1);  // 1er septembre 2026
 const SEASON_END = new Date(2027, 5, 30);   // 30 juin 2027
 
@@ -302,7 +318,7 @@ function parsePresenceEvenements(rows) {
 }
 
 function isFormOpen() {
-  return !!showAddEvent || !!window.__editingEvenementId || !!window.__editingPaiementId;
+  return !!showAddEvent || !!window.__editingEvenementId || !!window.__editingPaiementId || !!window.__showAddPaiement || !!window.__showChangeCode;
 }
 
 async function fetchAll() {
@@ -480,6 +496,33 @@ function logout() {
   session = null;
   localStorage.removeItem(SESSION_KEY);
   render();
+}
+
+function getInitials(nom) {
+  const parts = nom.trim().split(/\s+/).filter(Boolean);
+  if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+  return nom.slice(0, 2).toUpperCase();
+}
+
+async function changeCodeApi(oldCode, newCode) {
+  try {
+    const res = await fetch(`${GOOGLE_SCRIPT_URL}?action=changeCode&authNom=${encodeURIComponent(session.nom)}&oldCode=${encodeURIComponent(oldCode)}&newCode=${encodeURIComponent(newCode)}`);
+    const data = await res.json();
+    if (data.ok) {
+      session.code = newCode;
+      localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+      window.__showChangeCode = false;
+      window.__changeCodeError = null;
+      alert("Code modifié avec succès.");
+      render();
+    } else {
+      window.__changeCodeError = data.error === "auth" ? "Code actuel incorrect." : "Le nouveau code doit comporter 4 chiffres.";
+      render();
+    }
+  } catch (err) {
+    window.__changeCodeError = "Connexion impossible. Réessaie.";
+    render();
+  }
 }
 
 // ---------- Calculs ----------
@@ -734,11 +777,34 @@ function render() {
     <img src="${LOGO_DATA_URI}" alt="Logo HBC Bischoffsheim"/>
     <div><div class="title">LustuZone</div><div class="subtitle">App de Gestion</div></div>
     <div class="spacer"></div>
-    <div style="text-align:right;">
-      <div class="muted" style="margin-bottom:2px;">${session.nom} <span class="badge">${session.role}</span></div>
-      <span class="logout-link" id="logout-link">Se déconnecter</span>
+    <div class="avatar-wrap">
+      <div class="avatar-btn" id="avatar-btn">${getInitials(session.nom)}</div>
+      ${window.__avatarMenuOpen ? `<div class="avatar-menu">
+        <div class="avatar-menu-name">${session.nom}</div>
+        <div class="badge avatar-menu-role">${session.role}</div>
+        <div class="avatar-menu-item disabled" id="menu-profil">Profil</div>
+        <div class="avatar-menu-item" id="menu-changecode">Changer le code</div>
+        <div class="avatar-menu-item danger" id="menu-logout">Se déconnecter</div>
+      </div>` : ""}
     </div>
   </div>`;
+
+  if (window.__showChangeCode) {
+    html += `<div class="card">
+      <div class="section-h" style="margin-bottom:8px;">Changer mon code</div>
+      <label class="field-label">Code actuel</label>
+      <input id="cc-old" type="password" inputmode="numeric" maxlength="4" placeholder="••••" />
+      <label class="field-label">Nouveau code (4 chiffres)</label>
+      <input id="cc-new1" type="password" inputmode="numeric" maxlength="4" placeholder="••••" />
+      <label class="field-label">Confirme le nouveau code</label>
+      <input id="cc-new2" type="password" inputmode="numeric" maxlength="4" placeholder="••••" />
+      ${window.__changeCodeError ? `<div class="login-error">${window.__changeCodeError}</div>` : ""}
+      <div class="row-flex" style="margin-top:10px;">
+        <button class="btn" style="flex:1;" id="cc-submit">Valider</button>
+        <button class="btn secondary" style="flex:1;" id="cc-cancel">Annuler</button>
+      </div>
+    </div>`;
+  }
 
   if (!isOnline) {
     html += `<div class="status-bar status-offline">Hors ligne - nouvelle tentative...</div>`;
@@ -963,10 +1029,6 @@ function renderHome() {
     </div>`;
   }
 
-  // Fil de l'équipe (module à venir)
-  html += `<div class="section-h">Le fil de l'équipe</div>`;
-  html += `<div class="card muted">Aucune actualité pour le moment.</div>`;
-
   const weekEvents = getCurrentWeekEvents().filter(ev => !nextEv || ev[0] !== nextEv[0]);
   html += `<div class="section-h">Cette semaine</div>`;
   if (weekEvents.length > 0) {
@@ -979,6 +1041,10 @@ function renderHome() {
   } else {
     html += `<div class="card muted">Aucun autre événement dans les 7 prochains jours.</div>`;
   }
+
+  // Fil d'actualité (module à venir)
+  html += `<div class="section-h">Fil d'actualité</div>`;
+  html += `<div class="card muted">Aucune actualité pour le moment.</div>`;
 
   if (PLAYERS.includes(session.nom)) {
     html += `<div class="section-h">Caisse noire</div>`;
@@ -1056,7 +1122,7 @@ function renderNextEventCard() {
 
 function renderAgenda() {
   const canManage = session.role === "Coach" || session.role === "Admin";
-  let html = "";
+  let html = `<div class="page-title">Agenda</div><div class="page-sub">Matchs, entraînements et événements de l'équipe.</div>`;
 
   if (canManage) {
     if (session.role === "Admin") {
@@ -1257,7 +1323,7 @@ function renderPresencePage() {
   const upcoming = sorted.filter(ev => eventDateObj(ev) >= now);
   const past = sorted.filter(ev => eventDateObj(ev) < now).reverse();
 
-  let html = "";
+  let html = `<div class="page-title">Présence</div><div class="page-sub">Suivi des présences de l'équipe.</div>`;
   html += renderSeasonAverageCard();
 
   if (upcoming.length === 0) {
@@ -1328,30 +1394,46 @@ function renderPresenceEventCard(ev, isPast) {
 }
 
 function renderPaiementsPage() {
-  let html = `<div class="card">
-    <div class="muted" style="margin-bottom:8px;">Enregistrer un paiement reçu</div>
-    <select id="paiement-joueur">
-      ${PLAYERS.map(p => `<option value="${p}">${p}</option>`).join("")}
-    </select>
-    <input id="paiement-montant" type="number" step="0.5" placeholder="Montant en €" style="margin-top:8px;" />
-    <input id="paiement-commentaire" type="text" placeholder="Commentaire (optionnel)" style="margin-top:8px;" />
-    <div style="margin-top:10px;"><button class="btn" id="paiement-add">Enregistrer le paiement</button></div>
+  const totalDu = grandTotal();
+  const totalPayeAll = paiements.reduce((s, r) => s + (parseFloat(r[2]) || 0), 0);
+  const resteAEncaisser = totalDu - totalPayeAll;
+
+  let html = `<div class="page-title">Paiements</div><div class="page-sub">Suivi de la trésorerie.</div>`;
+
+  html += `<div class="pay-summary">
+    <div class="pay-summary-label">Reste à encaisser</div>
+    <div class="pay-summary-val">${fmt(resteAEncaisser)} €</div>
+    <div class="pay-summary-sub">Sur ${fmt(totalDu)} € dus · ${fmt(totalPayeAll)} € reçus</div>
   </div>`;
 
-  html += `<div class="card"><div class="muted" style="margin-bottom:8px;">Reste à payer par joueur</div>`;
+  html += `<button class="add-toggle" id="toggle-add-paiement">${window.__showAddPaiement ? "− Fermer" : "+ Ajouter un paiement"}</button>`;
+  if (window.__showAddPaiement) {
+    html += `<div class="add-form">
+      <label class="field-label">Joueur</label>
+      <select id="paiement-joueur">
+        ${PLAYERS.map(p => `<option value="${p}">${p}</option>`).join("")}
+      </select>
+      <label class="field-label">Montant (€)</label>
+      <input id="paiement-montant" type="number" step="0.5" placeholder="Ex: 20" />
+      <label class="field-label">Commentaire (optionnel)</label>
+      <input id="paiement-commentaire" type="text" placeholder="Ex: virement, espèces..." />
+      <button class="btn" id="paiement-add" style="margin-top:6px;">Enregistrer le paiement</button>
+    </div>`;
+  }
+
+  html += `<div class="section-h">Reste à payer</div><div class="card">`;
   PLAYERS.slice().sort((a, b) => resteAPayer(b) - resteAPayer(a)).forEach(p => {
     const reste = resteAPayer(p);
     const color = reste > 0 ? "#ff5a5a" : "#33d17a";
-    html += `<div class="paiement-row"><div>${p}</div><div style="color:${color}; font-weight:600;">${fmt(reste)} €</div></div>`;
+    html += `<div class="paiement-row"><div>${p}</div><div style="color:${color}; font-weight:800;">${fmt(reste)} €</div></div>`;
   });
-  const totalDu = grandTotal();
-  const totalPayeAll = paiements.reduce((s, r) => s + (parseFloat(r[2]) || 0), 0);
-  html += `<div class="paiement-row" style="border-top:2px solid #2f6bff; margin-top:6px; padding-top:8px; font-weight:bold; color:#fff;">
-    <div>Total dû : ${fmt(totalDu)} € · Total payé : ${fmt(totalPayeAll)} €</div>
-  </div></div>`;
+  html += `</div>`;
 
-  if (paiements.length > 0) {
-    html += `<div class="card"><div class="muted" style="margin-bottom:8px;">Historique des paiements</div>`;
+  html += `<div class="section-h">Derniers paiements</div>`;
+  if (paiements.length === 0) {
+    html += `<div class="card muted">Aucun paiement enregistré pour le moment.</div>`;
+  } else {
+    html += `<div class="card">`;
     paiements.slice().reverse().forEach(r => {
       const [id, joueur, montant, date, commentaire] = r;
       if (window.__editingPaiementId === id) {
@@ -1368,9 +1450,9 @@ function renderPaiementsPage() {
         </div>`;
       } else {
         html += `<div class="paiement-row">
-          <div>${joueur} ${commentaire ? "(" + commentaire + ")" : ""}</div>
+          <div>${joueur} ${commentaire ? `<span class="muted">(${commentaire})</span>` : ""}</div>
           <div style="display:flex; align-items:center; gap:8px;">
-            <span>${fmt(parseFloat(montant))} € - ${date}</span>
+            <span class="muted">${fmt(parseFloat(montant))} € · ${date}</span>
             ${iconBtn(ICON_EDIT, "ev-edit", `data-edit-paiement="${id}"`)}
             ${iconBtn(ICON_CROSS, "ev-del", `data-delete-paiement="${id}"`)}
           </div>
@@ -1391,7 +1473,7 @@ function vibrate() {
 
 // Retour visuel immédiat au toucher, indépendant du rafraîchissement de la page
 // (le CSS :active seul n'a pas toujours le temps de s'afficher avant le re-rendu)
-const TAP_SELECTOR = ".btn, .nav-btn, .toggle-btn, .ev-edit, .ev-del, .bottom-nav button, .expand-toggle";
+const TAP_SELECTOR = ".btn, .nav-btn, .toggle-btn, .ev-edit, .ev-del, .bottom-nav button, .expand-toggle, .avatar-btn, .avatar-menu-item";
 document.addEventListener("touchstart", (e) => {
   const el = e.target.closest(TAP_SELECTOR);
   if (el) el.classList.add("tap-active");
@@ -1404,12 +1486,12 @@ document.addEventListener("touchstart", (e) => {
 
 function attachEvents() {
   document.querySelectorAll(".nav-btn").forEach(btn => {
-    btn.onclick = () => { vibrate(); currentPage = btn.dataset.page; render(); };
+    btn.onclick = () => { vibrate(); currentPage = btn.dataset.page; window.__avatarMenuOpen = false; render(); };
   });
 
   const navExtra = document.getElementById("nav-extra");
   if (navExtra) navExtra.onchange = (e) => {
-    if (e.target.value) { vibrate(); currentPage = e.target.value; render(); }
+    if (e.target.value) { vibrate(); currentPage = e.target.value; window.__avatarMenuOpen = false; render(); }
   };
 
   document.querySelectorAll("[data-event-presence]").forEach(btn => {
@@ -1500,8 +1582,38 @@ function attachEvents() {
     };
   });
 
-  const logoutLink = document.getElementById("logout-link");
-  if (logoutLink) logoutLink.onclick = logout;
+  const avatarBtn = document.getElementById("avatar-btn");
+  if (avatarBtn) avatarBtn.onclick = () => { window.__avatarMenuOpen = !window.__avatarMenuOpen; render(); };
+
+  const menuChangeCode = document.getElementById("menu-changecode");
+  if (menuChangeCode) menuChangeCode.onclick = () => {
+    window.__avatarMenuOpen = false;
+    window.__showChangeCode = true;
+    render();
+  };
+
+  const menuLogout = document.getElementById("menu-logout");
+  if (menuLogout) menuLogout.onclick = logout;
+
+  const ccCancel = document.getElementById("cc-cancel");
+  if (ccCancel) ccCancel.onclick = () => {
+    window.__showChangeCode = false;
+    window.__changeCodeError = null;
+    render();
+  };
+
+  const ccSubmit = document.getElementById("cc-submit");
+  if (ccSubmit) ccSubmit.onclick = () => {
+    const oldCode = document.getElementById("cc-old").value;
+    const n1 = document.getElementById("cc-new1").value;
+    const n2 = document.getElementById("cc-new2").value;
+    if (!/^\d{4}$/.test(n1) || n1 !== n2) {
+      window.__changeCodeError = "Les nouveaux codes ne correspondent pas ou ne sont pas valides (4 chiffres).";
+      render();
+      return;
+    }
+    changeCodeApi(oldCode, n1);
+  };
 
   const entryTarget = document.getElementById("entry-target");
   if (entryTarget) entryTarget.onchange = (e) => { window.__entryTarget = e.target.value; render(); };
@@ -1526,12 +1638,19 @@ function attachEvents() {
   const exportBtn = document.getElementById("export-csv");
   if (exportBtn) exportBtn.onclick = exportCSV;
 
+  const toggleAddPaiement = document.getElementById("toggle-add-paiement");
+  if (toggleAddPaiement) toggleAddPaiement.onclick = () => {
+    window.__showAddPaiement = !window.__showAddPaiement;
+    render();
+  };
+
   const paiementAdd = document.getElementById("paiement-add");
   if (paiementAdd) paiementAdd.onclick = () => {
     const joueur = document.getElementById("paiement-joueur").value;
     const montant = parseFloat(document.getElementById("paiement-montant").value);
     const commentaire = document.getElementById("paiement-commentaire").value;
     if (!joueur || !montant) return;
+    window.__showAddPaiement = false;
     addPaiement(joueur, montant, commentaire);
   };
 
