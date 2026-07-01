@@ -125,7 +125,7 @@
 
   @media (min-width: 700px) {
     body { padding-bottom: calc(100px + env(safe-area-inset-bottom)); }
-    #app { max-width: 600px; margin: 0 auto; padding: 24px; border-radius: 26px; animation: none; border: 1px solid rgba(0,212,255,0.35); box-shadow: 0 0 50px rgba(47,107,255,0.14), inset 0 0 30px rgba(0,212,255,0.04); }
+    #app { max-width: 600px; margin: 24px auto 0; padding: 24px; border-radius: 26px; animation: none; border: 1px solid rgba(0,212,255,0.35); box-shadow: 0 0 50px rgba(47,107,255,0.14), inset 0 0 30px rgba(0,212,255,0.04); }
     .bottom-nav { left: 50%; right: auto; transform: translateX(-50%); width: min(600px, calc(100% - 24px)); }
     .card, .add-form { padding: 20px; }
     .header img { height: 42px; }
@@ -253,7 +253,7 @@ const PLAYERS = ["Thomas L.","JM B.","Hugo R.","Yann N.","Arnaud H.","Victor S."
 const LOGO_DATA_URI = "icon-512.png";
 const SESSION_KEY = "caisse-noire-session"; // {nom, role}
 const APP_VERSION_KEY = "caisse-noire-app-version";
-const APP_VERSION = "2026-07-01-15"; // À incrémenter à chaque mise à jour déployée
+const APP_VERSION = "2026-07-01-17"; // À incrémenter à chaque mise à jour déployée
 const SEASON_START = new Date(2026, 8, 1);  // 1er septembre 2026
 const SEASON_END = new Date(2027, 5, 30);   // 30 juin 2027
 
@@ -1431,11 +1431,17 @@ function renderPaiementsPage() {
   }
 
   html += `<div class="section-h">Reste à payer</div><div class="card">`;
-  PLAYERS.slice().sort((a, b) => resteAPayer(b) - resteAPayer(a)).forEach(p => {
+  const resteSorted = PLAYERS.slice().sort((a, b) => resteAPayer(b) - resteAPayer(a));
+  const resteExpanded = !!window.__resteAPayerExpanded;
+  const resteVisible = resteExpanded ? resteSorted : resteSorted.slice(0, 6);
+  resteVisible.forEach(p => {
     const reste = resteAPayer(p);
     const color = reste > 0 ? "#ff5a5a" : "#33d17a";
     html += `<div class="paiement-row"><div>${p}</div><div style="color:${color}; font-weight:800;">${fmt(reste)} €</div></div>`;
   });
+  if (resteSorted.length > 6) {
+    html += `<div class="expand-toggle" data-toggle-reste-payer="1">${resteExpanded ? "Réduire ▲" : `Voir les ${resteSorted.length - 6} autres ▾`}</div>`;
+  }
   html += `</div>`;
 
   html += `<div class="section-h">Derniers paiements</div>`;
@@ -1549,6 +1555,12 @@ function attachEvents() {
   const toggleSeasonAvg = document.querySelector("[data-toggle-season-avg]");
   if (toggleSeasonAvg) toggleSeasonAvg.onclick = () => {
     window.__seasonAvgExpanded = !window.__seasonAvgExpanded;
+    render();
+  };
+
+  const toggleRestePayer = document.querySelector("[data-toggle-reste-payer]");
+  if (toggleRestePayer) toggleRestePayer.onclick = () => {
+    window.__resteAPayerExpanded = !window.__resteAPayerExpanded;
     render();
   };
 
