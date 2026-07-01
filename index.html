@@ -48,7 +48,7 @@
 
   select, input { font-size: 15px; padding: 10px; border-radius: 10px; border: 1px solid #1c2333; background: #11141f; color: #e8e8ee; width: 100%; font-family: 'Archivo', sans-serif; color-scheme: dark; }
   select:focus, input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
-  input[type="date"], input[type="time"] { min-height: 42px; }
+  input[type="date"], input[type="time"] { padding: 9px 10px; height: 44px; }
   table { border-collapse: collapse; width: 100%; font-size: 11px; }
   th, td { border: 1px solid #1c2333; padding: 5px 4px; text-align: center; white-space: nowrap; color: #c3ccde; }
   th { background: #151827; color: #fff; position: sticky; top: 0; z-index: 5; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; font-size: 10px; }
@@ -150,8 +150,9 @@
   .nc-actions { display: flex; gap: 8px; position: relative; }
   .nc-actions .btn { flex: 1; }
 
-  .add-form { background: #0d1018; border: 1px dashed #243049; border-radius: 14px; padding: 14px; margin-bottom: 12px; }
-  .add-form input, .add-form select { margin-bottom: 8px; }
+  .add-form { background: #0d1018; border: 1px dashed #243049; border-radius: 14px; padding: 12px; margin-bottom: 12px; }
+  .add-form input, .add-form select { margin-bottom: 6px; }
+  .add-form .field-label { margin: 8px 0 4px; }
   .add-form-row { display: flex; gap: 8px; flex-wrap: wrap; }
   .add-form-row > div { flex: 1; min-width: 130px; }
   .add-toggle { width: 100%; padding: 11px; border-radius: 12px; border: 1px dashed #2f3a52; background: transparent; color: var(--accent); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 12px; cursor: pointer; font-family: 'Archivo', sans-serif; }
@@ -199,7 +200,7 @@ const PLAYERS = ["Thomas L.","JM B.","Hugo R.","Yann N.","Arnaud H.","Victor S."
 const LOGO_DATA_URI = "icon-512.png";
 const SESSION_KEY = "caisse-noire-session"; // {nom, role}
 const APP_VERSION_KEY = "caisse-noire-app-version";
-const APP_VERSION = "2026-07-01-1"; // À incrémenter à chaque mise à jour déployée
+const APP_VERSION = "2026-07-01-2"; // À incrémenter à chaque mise à jour déployée
 const SEASON_START = new Date(2026, 8, 1);  // 1er septembre 2026
 const SEASON_END = new Date(2027, 5, 30);   // 30 juin 2027
 
@@ -369,6 +370,17 @@ async function updateEvenementApi(id, date, heure, type, titre, lieu) {
     await fetch(`${GOOGLE_SCRIPT_URL}?action=updateEvenement&id=${encodeURIComponent(id)}&date=${encodeURIComponent(date)}&heure=${encodeURIComponent(heure)}&type=${encodeURIComponent(type)}&titre=${encodeURIComponent(titre)}&lieu=${encodeURIComponent(lieu)}&authNom=${encodeURIComponent(session.nom)}&authCode=${encodeURIComponent(session.code)}`);
     window.__editingEvenementId = null;
     await fetchAll();
+  } catch (err) { isOnline = false; render(); }
+}
+
+async function generateSeasonTrainingsApi() {
+  const start = formatDateKey(SEASON_START);
+  const end = formatDateKey(SEASON_END);
+  try {
+    const res = await fetch(`${GOOGLE_SCRIPT_URL}?action=generateSeasonTrainings&start=${start}&end=${end}&heure=20:00&lieu=${encodeURIComponent("Gymnase Leclerc")}&authNom=${encodeURIComponent(session.nom)}&authCode=${encodeURIComponent(session.code)}`);
+    const data = await res.json();
+    await fetchAll();
+    alert(data.ok ? `${data.created} entraînement(s) ajouté(s) à l'agenda.` : "Une erreur est survenue.");
   } catch (err) { isOnline = false; render(); }
 }
 
@@ -783,32 +795,6 @@ function renderHome() {
     html += `<div class="card"><div class="muted">Bienvenue, ${session.nom}.</div></div>`;
   }
 
-  // Pointage présence (Joueur + Admin)
-  if (PLAYERS.includes(session.nom) || session.role === "Admin") {
-    html += renderPresenceWidget(session.nom);
-  }
-
-  return html;
-}
-
-function renderPresenceWidget(nom) {
-  if (!PLAYERS.includes(nom)) return "";
-  const [tuesday, thursday] = getActiveWeekTrainings();
-  const days = [tuesday, thursday];
-  let html = `<div class="card">
-    <div class="muted" style="margin-bottom:8px;">Présence entraînement - semaine du ${formatDateFr(tuesday).split(" ").slice(1).join(" ")}</div>`;
-  days.forEach(d => {
-    const key = formatDateKey(d);
-    const val = presences[`${key}_${nom}`];
-    html += `<div class="presence-row">
-      <div>${formatDateFr(d)}</div>
-      <div class="toggle-group">
-        <button class="toggle-btn ${val === "Oui" ? "present" : ""}" data-presence-date="${key}" data-presence-val="1">Présent</button>
-        <button class="toggle-btn ${val === "Non" ? "absent" : ""}" data-presence-date="${key}" data-presence-val="0">Absent</button>
-      </div>
-    </div>`;
-  });
-  html += `</div>`;
   return html;
 }
 
@@ -848,6 +834,9 @@ function renderAgenda() {
   let html = "";
 
   if (canManage) {
+    if (session.role === "Admin") {
+      html += `<button class="add-toggle" id="generate-trainings" style="border-style:solid; color:#7a8aad;">📅 Générer les entraînements de la saison (mar/jeu)</button>`;
+    }
     html += `<button class="add-toggle" id="toggle-add-event">${showAddEvent ? "− Fermer" : "+ Ajouter un événement"}</button>`;
     if (showAddEvent) {
       html += `<div class="add-form">
@@ -1030,86 +1019,58 @@ function renderTable() {
 }
 
 function renderPresencePage() {
-  const weeks = getSeasonWeeks();
-  const [activeTuesday] = getActiveWeekTrainings();
-  const activeKey = formatDateKey(activeTuesday);
+  const sorted = sortedEvenements();
+  const now = new Date();
+  const upcoming = sorted.filter(ev => eventDateObj(ev) >= now);
+  const past = sorted.filter(ev => eventDateObj(ev) < now).reverse();
 
-  // Moyenne de présence par joueur sur la saison (sur les jours renseignés uniquement)
-  const stats = PLAYERS.map(p => {
-    let oui = 0, total = 0;
-    weeks.forEach(([tue, thu]) => {
-      [tue, thu].forEach(d => {
-        const val = presences[`${formatDateKey(d)}_${p}`];
-        if (val === "Oui" || val === "Non") {
-          total++;
-          if (val === "Oui") oui++;
-        }
-      });
-    });
-    return { p, pct: total > 0 ? (oui / total) * 100 : null, oui, total };
-  });
+  let html = `<div class="section-h">À venir</div>`;
+  if (upcoming.length === 0) {
+    html += `<div class="card muted">Aucun événement à venir.</div>`;
+  } else {
+    upcoming.forEach(ev => { html += renderPresenceEventCard(ev, false); });
+  }
 
-  let html = `<div class="card">
-    <div class="muted" style="margin-bottom:8px;">Moyenne de présence sur la saison</div>`;
-  stats.slice().sort((a, b) => (b.pct ?? -1) - (a.pct ?? -1)).forEach(s => {
-    const label = s.pct === null ? "Pas de donnée" : `${fmt(s.pct)} % (${s.oui}/${s.total})`;
-    const color = s.pct === null ? "#5a6b8c" : (s.pct >= 75 ? "#33d17a" : (s.pct >= 50 ? "#ffb43c" : "#ff5a5a"));
-    html += `<div class="paiement-row"><div>${s.p}</div><div style="color:${color}; font-weight:600;">${label}</div></div>`;
-  });
-  html += `</div>`;
+  if (past.length > 0) {
+    html += `<div class="section-h">Passés</div>`;
+    past.slice(0, 12).forEach(ev => { html += renderPresenceEventCard(ev, true); });
+  }
 
-  // Récap pour les entraînements de la semaine en cours (mardi + jeudi)
-  const [activeTue, activeThu] = getActiveWeekTrainings();
-  html += `<div class="card">
-    <div class="muted" style="margin-bottom:8px;">Présences prévues - semaine en cours</div>`;
-  [activeTue, activeThu].forEach(d => {
-    const key = formatDateKey(d);
-    let oui = 0, non = 0;
-    PLAYERS.forEach(p => {
-      const val = presences[`${key}_${p}`];
-      if (val === "Oui") oui++;
-      else if (val === "Non") non++;
-    });
-    const renseigne = oui + non;
-    html += `<div class="paiement-row">
-      <div>${formatDateFr(d)}</div>
-      <div><span style="color:#33d17a; font-weight:700;">${oui} présents</span> · <span style="color:#ff5a5a; font-weight:700;">${non} absents</span> <span class="muted">(${renseigne}/${PLAYERS.length} renseignés)</span></div>
+  return html;
+}
+
+function renderPresenceEventCard(ev, isPast) {
+  const [id, date, heure, type, titre, lieu] = ev;
+  const d = eventDateObj(ev);
+  const expanded = window.__expandedEventId === id;
+  const roster = PLAYERS.map(p => ({ p, val: presenceEvenements[`${id}_${p}`] }));
+  const presentCount = roster.filter(r => r.val === "Oui").length;
+  const absentCount = roster.filter(r => r.val === "Non").length;
+  const pendingCount = roster.length - presentCount - absentCount;
+
+  let html = `<div class="ev-card" style="flex-direction:column; align-items:stretch; cursor:pointer; ${isPast ? 'opacity:0.6;' : ''}" data-toggle-roster="${id}">
+    <div style="display:flex; align-items:center; gap:12px;">
+      <div class="ev-date"><div class="ev-day">${d.getDate()}</div><div class="ev-month">${d.toLocaleDateString("fr-FR", { month: "short" })}</div></div>
+      <div class="ev-divider"></div>
+      <div class="ev-info">
+        <span class="ev-type ${typeClass(type)}">${type || "Événement"}</span>
+        <div class="ev-title">${titre || "Sans titre"}</div>
+        <div class="ev-meta"><span style="color:#33d17a; font-weight:700;">${presentCount} présents</span> · <span style="color:#ff5a5a; font-weight:700;">${absentCount} absents</span> · <span class="muted">${pendingCount} en attente</span></div>
+      </div>
+      <div style="color:#5a6b8c; font-size:16px; flex-shrink:0;">${expanded ? "▲" : "▼"}</div>
     </div>`;
-  });
-  html += `</div>`;
 
-  html += `<div class="card muted">Vue d'ensemble - chaque colonne = une semaine (Mardi / Jeudi). La semaine en cours est surlignée.</div>`;
-
-  html += `<div class="table-wrap"><table>
-    <thead>
-      <tr>
-        <th class="action-name" rowspan="2">Joueur</th>
-        ${weeks.map(([tue]) => `<th colspan="2" style="${formatDateKey(tue) === activeKey ? 'background:#2f6bff;' : ''}">${formatDateShort(tue)}</th>`).join("")}
-      </tr>
-      <tr>
-        ${weeks.map(([tue, thu]) => `
-          <th style="font-size:10px; ${formatDateKey(tue) === activeKey ? 'background:#2f6bff;' : ''}">Ma</th>
-          <th style="font-size:10px; ${formatDateKey(tue) === activeKey ? 'background:#2f6bff;' : ''}">Je</th>
-        `).join("")}
-      </tr>
-    </thead>
-    <tbody>`;
-
-  PLAYERS.forEach(p => {
-    html += `<tr><td class="action-name">${p}</td>`;
-    weeks.forEach(([tue, thu]) => {
-      [tue, thu].forEach(d => {
-        const key = formatDateKey(d);
-        const val = presences[`${key}_${p}`];
-        const symbol = val === "Oui" ? "Oui" : (val === "Non" ? "Non" : "·");
-        const color = val === "Oui" ? "#33d17a" : (val === "Non" ? "#ff5a5a" : "#3a4258");
-        html += `<td style="color:${color}; font-weight:bold;">${symbol}</td>`;
-      });
+  if (expanded) {
+    html += `<div style="margin-top:12px; border-top:1px solid #1a2030; padding-top:8px;">`;
+    roster.forEach(r => {
+      const color = r.val === "Oui" ? "#33d17a" : (r.val === "Non" ? "#ff5a5a" : "#5a6b8c");
+      const label = r.val === "Oui" ? "Présent" : (r.val === "Non" ? "Absent" : "Non renseigné");
+      html += `<div class="presence-row"><div>${r.p}</div><div style="color:${color}; font-weight:700; font-size:12px;">${label}</div></div>`;
     });
-    html += `</tr>`;
-  });
+    html += `</div>`;
+  }
 
-  html += `</tbody></table></div>`;
+  html += `</div>`;
   return html;
 }
 
@@ -1196,6 +1157,21 @@ function attachEvents() {
 
   const toggleAddEvent = document.getElementById("toggle-add-event");
   if (toggleAddEvent) toggleAddEvent.onclick = () => { showAddEvent = !showAddEvent; render(); };
+
+  const generateTrainings = document.getElementById("generate-trainings");
+  if (generateTrainings) generateTrainings.onclick = () => {
+    if (confirm("Générer tous les entraînements du mardi et jeudi pour toute la saison ? Les entraînements déjà existants ne seront pas dupliqués.")) {
+      generateSeasonTrainingsApi();
+    }
+  };
+
+  document.querySelectorAll("[data-toggle-roster]").forEach(el => {
+    el.onclick = () => {
+      const id = el.dataset.toggleRoster;
+      window.__expandedEventId = window.__expandedEventId === id ? null : id;
+      render();
+    };
+  });
 
   const submitAddEvent = document.getElementById("submit-add-event");
   if (submitAddEvent) submitAddEvent.onclick = () => {
