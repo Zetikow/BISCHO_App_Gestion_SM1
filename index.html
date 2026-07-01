@@ -116,9 +116,16 @@
   .section-h { font-size: 11px; font-weight: 800; color: #fff; margin: 6px 2px 10px; text-transform: uppercase; letter-spacing: 1px; display: flex; align-items: center; gap: 7px; }
   .section-h::before { content: ""; width: 14px; height: 3px; background: var(--accent); border-radius: 2px; }
 
+  #app { border: 1px solid rgba(0,212,255,0.28); border-radius: 20px; animation: appShimmer 3.2s ease-in-out infinite; }
+
+  @keyframes appShimmer {
+    0%, 100% { border-color: rgba(0,212,255,0.16); box-shadow: 0 0 14px rgba(0,212,255,0.08); }
+    50% { border-color: rgba(0,212,255,0.42); box-shadow: 0 0 22px rgba(0,212,255,0.2); }
+  }
+
   @media (min-width: 700px) {
     body { padding-bottom: calc(100px + env(safe-area-inset-bottom)); }
-    #app { max-width: 600px; margin: 0 auto; padding: 24px; }
+    #app { max-width: 600px; margin: 0 auto; padding: 24px; border-radius: 26px; animation: none; border: 1px solid rgba(0,212,255,0.35); box-shadow: 0 0 50px rgba(47,107,255,0.14), inset 0 0 30px rgba(0,212,255,0.04); }
     .bottom-nav { left: 50%; right: auto; transform: translateX(-50%); width: min(600px, calc(100% - 24px)); }
     .card, .add-form { padding: 20px; }
     .header img { height: 42px; }
@@ -246,7 +253,7 @@ const PLAYERS = ["Thomas L.","JM B.","Hugo R.","Yann N.","Arnaud H.","Victor S."
 const LOGO_DATA_URI = "icon-512.png";
 const SESSION_KEY = "caisse-noire-session"; // {nom, role}
 const APP_VERSION_KEY = "caisse-noire-app-version";
-const APP_VERSION = "2026-07-01-14"; // À incrémenter à chaque mise à jour déployée
+const APP_VERSION = "2026-07-01-15"; // À incrémenter à chaque mise à jour déployée
 const SEASON_START = new Date(2026, 8, 1);  // 1er septembre 2026
 const SEASON_END = new Date(2027, 5, 30);   // 30 juin 2027
 
