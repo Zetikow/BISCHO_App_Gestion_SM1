@@ -87,9 +87,13 @@
   .toggle-btn.present { background: #1a7a3f; color: #fff; border-color: #1a7a3f; }
   .toggle-btn.absent { background: #b33; color: #fff; border-color: #b33; }
 
-  .login-wrap { display: flex; align-items: center; justify-content: center; min-height: 80vh; }
-  .login-card { background: #11141f; border: 1px solid #1c2333; border-radius: 20px; padding: 26px; max-width: 320px; width: 100%; text-align: center; }
-  .login-card img { height: 56px; margin-bottom: 12px; border-radius: 14px; }
+  .login-wrap { display: flex; align-items: center; justify-content: center; min-height: 85vh; padding: 16px; }
+  .login-card-outer { border-radius: 26px; padding: 2px; background: var(--grad); max-width: 360px; width: 100%; }
+  .login-card { background: #11141f; border-radius: 24px; padding: 32px 26px; text-align: center; position: relative; overflow: hidden; }
+  .login-card .login-glow { position: absolute; top: -60px; right: -60px; width: 180px; height: 180px; background: var(--glow); }
+  .login-card img { height: 72px; margin-bottom: 14px; border-radius: 18px; position: relative; }
+  .login-card .login-title { font-size: 23px; font-weight: 900; color: #fff; letter-spacing: -0.5px; margin-bottom: 4px; position: relative; }
+  .login-card .login-subtitle { font-size: 11px; color: #7a8aad; text-transform: uppercase; letter-spacing: 1.2px; font-weight: 700; margin-bottom: 6px; position: relative; }
   .login-error { color: #ff5a5a; font-size: 12px; margin-top: 10px; font-weight: 600; }
   .field-label { display: block; text-align: left; margin: 12px 0 5px; font-size: 11px; color: #5a6b8c; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; }
   .paiement-row { display: flex; justify-content: space-between; align-items: center; padding: 9px 0; border-bottom: 1px solid #1a2030; font-size: 12px; color: #c3ccde; }
@@ -162,6 +166,22 @@
   .date-select-row { display: flex; gap: 6px; margin-bottom: 8px; }
   .date-select-row select { flex: 1; min-width: 0; padding: 9px 2px; text-align: center; font-size: 13px; }
   .expand-toggle { text-align: center; padding: 8px; font-size: 11px; color: var(--accent); font-weight: 800; text-transform: uppercase; letter-spacing: 0.4px; cursor: pointer; }
+
+  .page-title { font-size: 22px; font-weight: 900; color: #fff; letter-spacing: -0.6px; margin-bottom: 3px; text-transform: uppercase; }
+  .page-sub { font-size: 11px; color: #7a8aad; margin-bottom: 14px; font-weight: 600; }
+
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin-bottom: 12px; }
+  .stat { background: #11141f; border: 1px solid #1c2333; border-radius: 14px; padding: 13px; position: relative; overflow: hidden; }
+  .stat-bar { position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--accent); }
+  .stat.alt .stat-bar { background: #ff7849; }
+  .stat-label { font-size: 9px; color: #5a6b8c; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.6px; font-weight: 700; }
+  .stat-value { font-size: 24px; font-weight: 900; color: #fff; letter-spacing: -1px; }
+  .stat-value.warn { color: #ff7849; }
+  .stat-sub { font-size: 9px; color: #5a6b8c; margin-top: 2px; }
+
+  .stat-bar-row { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 6px; background: #0d1018; border: 1px solid #1c2333; border-radius: 12px; padding: 12px 14px; font-size: 12px; margin-bottom: 4px; }
+  .pointer-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #1a2030; }
+  .pointer-row:last-child { border-bottom: none; }
   .add-toggle { width: 100%; padding: 11px; border-radius: 12px; border: 1px dashed #2f3a52; background: transparent; color: var(--accent); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 12px; cursor: pointer; font-family: 'Archivo', sans-serif; }
 </style>
 </head>
@@ -207,7 +227,7 @@ const PLAYERS = ["Thomas L.","JM B.","Hugo R.","Yann N.","Arnaud H.","Victor S."
 const LOGO_DATA_URI = "icon-512.png";
 const SESSION_KEY = "caisse-noire-session"; // {nom, role}
 const APP_VERSION_KEY = "caisse-noire-app-version";
-const APP_VERSION = "2026-07-01-9"; // À incrémenter à chaque mise à jour déployée
+const APP_VERSION = "2026-07-01-10"; // À incrémenter à chaque mise à jour déployée
 const SEASON_START = new Date(2026, 8, 1);  // 1er septembre 2026
 const SEASON_END = new Date(2027, 5, 30);   // 30 juin 2027
 
@@ -826,10 +846,11 @@ function renderLogin() {
     formHtml = `<div class="muted" style="margin-top:10px;">Vérification...</div>`;
   }
 
-  return `<div class="login-wrap"><div class="login-card">
+  return `<div class="login-wrap"><div class="login-card-outer"><div class="login-card">
+    <div class="login-glow"></div>
     <img src="${LOGO_DATA_URI}" alt="Logo"/>
-    <div style="font-weight:bold; font-size:16px; margin-bottom:4px;">LustuZone</div>
-    <div class="muted">App de Gestion</div>
+    <div class="login-title">LustuZone</div>
+    <div class="login-subtitle">App de Gestion</div>
     <label class="field-label">Ton nom</label>
     <select id="login-nom">
       <option value="">-- Choisir --</option>
@@ -840,7 +861,7 @@ function renderLogin() {
     </select>
     ${formHtml}
     ${loginError ? `<div class="login-error">${loginError}</div>` : ""}
-  </div></div>`;
+  </div></div></div>`;
 }
 
 function attachLoginEvents() {
@@ -884,34 +905,6 @@ function computeSeasonAverages() {
   }).sort((a, b) => (b.pct ?? -1) - (a.pct ?? -1));
 }
 
-function renderEventRosterSection(ev, canManage) {
-  const id = ev[0];
-  let html = `<div class="card">
-    <div class="section-h" style="margin-bottom:8px;">Pointage - ${ev[4] || "Événement"}</div>`;
-
-  if (canManage) {
-    const roster = PLAYERS.map(p => ({ p, val: presenceEvenements[`${id}_${p}`] }));
-    const expanded = !!window.__nextRosterExpanded;
-    const visibleRoster = expanded ? roster : roster.slice(0, 5);
-    visibleRoster.forEach(r => {
-      const color = r.val === "Oui" ? "#33d17a" : (r.val === "Non" ? "#ff5a5a" : "#5a6b8c");
-      const label = r.val === "Oui" ? "Présent" : (r.val === "Non" ? "Absent" : "En attente");
-      html += `<div class="presence-row"><div>${r.p}</div><div style="color:${color}; font-weight:700; font-size:12px;">${label}</div></div>`;
-    });
-    if (roster.length > 5) {
-      html += `<div class="expand-toggle" data-toggle-next-roster="1">${expanded ? "Réduire ▲" : `Voir les ${roster.length - 5} autres ▾`}</div>`;
-    }
-  } else {
-    const val = presenceEvenements[`${id}_${session.nom}`];
-    const color = val === "Oui" ? "#33d17a" : (val === "Non" ? "#ff5a5a" : "#5a6b8c");
-    const label = val === "Oui" ? "Présent" : (val === "Non" ? "Absent" : "Pas encore répondu");
-    html += `<div class="presence-row"><div>Toi</div><div style="color:${color}; font-weight:700; font-size:12px;">${label}</div></div>`;
-  }
-
-  html += `</div>`;
-  return html;
-}
-
 function renderSeasonAverageCard() {
   const stats = computeSeasonAverages();
   const expanded = !!window.__seasonAvgExpanded;
@@ -935,17 +928,44 @@ function renderSeasonAverageCard() {
 }
 
 function renderHome() {
-  const isPlayerLike = PLAYERS.includes(session.nom) || session.role === "Admin";
   const canManage = session.role === "Coach" || session.role === "Admin";
   let html = "";
 
   const nextEv = nextEvenement();
+
+  // Titre dynamique façon maquette
+  if (nextEv) {
+    const d = eventDateObj(nextEv);
+    const dayName = d.toLocaleDateString("fr-FR", { weekday: "long" });
+    const diffDays = Math.round((d - new Date()) / (1000 * 60 * 60 * 24));
+    const isMatch = typeClass(nextEv[3]) === "match";
+    const headline = isMatch ? `Prêt pour ${dayName} ?` : `Prochain rendez-vous : ${dayName}`;
+    const sub = diffDays <= 0 ? "C'est aujourd'hui !" : diffDays === 1 ? "C'est demain !" : `Dans ${diffDays} jours.`;
+    html += `<div class="page-title">${headline}</div><div class="page-sub">${sub}</div>`;
+  } else {
+    html += `<div class="page-title">Salut ${session.nom}</div><div class="page-sub">Aucun événement prévu pour le moment.</div>`;
+  }
+
   html += renderNextEventCard();
 
-  if (nextEv && session.role !== "Bénévole") {
-    html += renderEventRosterSection(nextEv, canManage);
-    html += renderSeasonAverageCard();
+  // Stats compactes : caisse noire + présence perso
+  if (PLAYERS.includes(session.nom)) {
+    const total = playerTotal(session.nom);
+    const rank = PLAYERS.map(p => ({ p, t: playerTotal(p) })).sort((a, b) => b.t - a.t);
+    const myRank = rank.findIndex(r => r.p === session.nom) + 1;
+    const myStats = computeSeasonAverages().find(s => s.p === session.nom);
+    const pctDisplay = myStats && myStats.pct !== null ? `${fmt(myStats.pct)}%` : "-";
+    const pctSub = myStats && myStats.total > 0 ? `${myStats.oui}/${myStats.total}` : "Pas de donnée";
+
+    html += `<div class="grid2">
+      <div class="stat alt"><div class="stat-bar"></div><div class="stat-label">Caisse noire</div><div class="stat-value warn">${fmt(total)}€</div><div class="stat-sub">${myRank}e / ${PLAYERS.length}</div></div>
+      <div class="stat"><div class="stat-bar"></div><div class="stat-label">Présence</div><div class="stat-value">${pctDisplay}</div><div class="stat-sub">${pctSub}</div></div>
+    </div>`;
   }
+
+  // Fil de l'équipe (module à venir)
+  html += `<div class="section-h">Le fil de l'équipe</div>`;
+  html += `<div class="card muted">Aucune actualité pour le moment.</div>`;
 
   const weekEvents = getCurrentWeekEvents().filter(ev => !nextEv || ev[0] !== nextEv[0]);
   html += `<div class="section-h">Cette semaine</div>`;
@@ -967,11 +987,6 @@ function renderHome() {
       .filter(l => l.count > 0);
 
     html += `<div class="card">
-      <div class="muted">Total caisse noire</div>
-      <div class="big-number">${fmt(total)} €</div>
-    </div>`;
-
-    html += `<div class="card">
       <div class="muted" style="margin-bottom:8px;">Détail des actions enregistrées</div>`;
     if (lines.length === 0) {
       html += `<div class="muted">Aucune action enregistrée pour le moment.</div>`;
@@ -980,12 +995,9 @@ function renderHome() {
     }
     html += `</div>`;
 
-    const rank = PLAYERS.map(p => ({ p, t: playerTotal(p) })).sort((a, b) => b.t - a.t);
-    const myRank = rank.findIndex(r => r.p === session.nom) + 1;
     html += `<div class="card">
-      <div class="muted">Classement</div>
-      <div style="font-size:18px; font-weight:bold; margin-top:4px;">${myRank}e sur ${PLAYERS.length}</div>
-      <div class="muted" style="margin-top:8px;">Total caisse de l'équipe : ${fmt(grandTotal())} €</div>
+      <div class="muted">Total caisse de l'équipe</div>
+      <div class="big-number">${fmt(grandTotal())} €</div>
     </div>`;
   } else {
     html += `<div class="card"><div class="muted">Bienvenue, ${session.nom}.</div></div>`;
@@ -1246,6 +1258,8 @@ function renderPresencePage() {
   const past = sorted.filter(ev => eventDateObj(ev) < now).reverse();
 
   let html = "";
+  html += renderSeasonAverageCard();
+
   if (upcoming.length === 0) {
     html += `<div class="section-h">À venir</div><div class="card muted">Aucun événement à venir.</div>`;
   } else {
@@ -1276,25 +1290,35 @@ function renderPresenceEventCard(ev, isPast) {
   const presentCount = roster.filter(r => r.val === "Oui").length;
   const absentCount = roster.filter(r => r.val === "Non").length;
   const pendingCount = roster.length - presentCount - absentCount;
+  const dayName = d.toLocaleDateString("fr-FR", { weekday: "long" });
 
-  let html = `<div class="ev-card" style="flex-direction:column; align-items:stretch; cursor:pointer; ${isPast ? 'opacity:0.6;' : ''}" data-toggle-roster="${id}">
-    <div style="display:flex; align-items:center; gap:12px;">
+  let html = `<div class="ev-card" style="flex-direction:column; align-items:stretch; ${isPast ? 'opacity:0.6;' : ''}">
+    <div style="display:flex; align-items:center; gap:12px; cursor:pointer;" data-toggle-roster="${id}">
       <div class="ev-date"><div class="ev-day">${d.getDate()}</div><div class="ev-month">${d.toLocaleDateString("fr-FR", { month: "short" })}</div></div>
       <div class="ev-divider"></div>
       <div class="ev-info">
         <span class="ev-type ${typeClass(type)}">${type || "Événement"}</span>
         <div class="ev-title">${titre || "Sans titre"}</div>
-        <div class="ev-meta"><span style="color:#33d17a; font-weight:700;">${presentCount} présents</span> · <span style="color:#ff5a5a; font-weight:700;">${absentCount} absents</span> · <span class="muted">${pendingCount} en attente</span></div>
+        <div class="ev-meta">${dayName} ${formatHeure(ev) ? "· " + formatHeure(ev) : ""}</div>
       </div>
       <div style="color:#5a6b8c; font-size:16px; flex-shrink:0;">${expanded ? "▲" : "▼"}</div>
     </div>`;
 
   if (expanded) {
-    html += `<div style="margin-top:12px; border-top:1px solid #1a2030; padding-top:8px;">`;
+    html += `<div style="margin-top:12px; border-top:1px solid #1a2030; padding-top:12px;">
+      <div class="stat-bar-row">
+        <span style="color:#33d17a; font-weight:800;">${presentCount} présents</span>
+        <span style="color:#ff5a5a; font-weight:700;">${absentCount} absents · <span class="muted" style="font-weight:600;">${pendingCount} en attente</span></span>
+      </div>
+      <div class="section-h" style="margin:14px 0 6px;">Pointer ${dayName}</div>`;
     roster.forEach(r => {
-      const color = r.val === "Oui" ? "#33d17a" : (r.val === "Non" ? "#ff5a5a" : "#5a6b8c");
-      const label = r.val === "Oui" ? "Présent" : (r.val === "Non" ? "Absent" : "Non renseigné");
-      html += `<div class="presence-row"><div>${r.p}</div><div style="color:${color}; font-weight:700; font-size:12px;">${label}</div></div>`;
+      html += `<div class="pointer-row">
+        <div style="font-size:12px; color:#e8e8ee;">${r.p}</div>
+        <div class="toggle-group">
+          <button class="toggle-btn ${r.val === 'Oui' ? 'present' : ''}" data-mark-presence="${id}" data-mark-player="${r.p}" data-mark-val="1">Oui</button>
+          <button class="toggle-btn ${r.val === 'Non' ? 'absent' : ''}" data-mark-presence="${id}" data-mark-player="${r.p}" data-mark-val="0">Non</button>
+        </div>
+      </div>`;
     });
     html += `</div>`;
   }
@@ -1412,6 +1436,16 @@ function attachEvents() {
       const id = el.dataset.toggleRoster;
       window.__expandedEventId = window.__expandedEventId === id ? null : id;
       render();
+    };
+  });
+
+  document.querySelectorAll("[data-mark-presence]").forEach(el => {
+    el.onclick = () => {
+      vibrate();
+      const eventId = el.dataset.markPresence;
+      const player = el.dataset.markPlayer;
+      const val = el.dataset.markVal === "1";
+      writePresenceEvenementApi(eventId, player, val);
     };
   });
 
