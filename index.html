@@ -107,9 +107,8 @@
   .cn-total-badge { display: flex; align-items: center; justify-content: center; gap: 6px; background: #1a1f30; border: 1px solid rgba(47,107,255,0.32); color: #cfe0ff; font-weight: 700; font-size: 12px; padding: 10px 16px; border-radius: 14px; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.4px; }
   .cn-total-badge b { color: var(--accent2); font-size: 15px; font-weight: 900; letter-spacing: 0; text-transform: none; }
   .cn-add-btn { margin-bottom: 14px; }
-  .cn-list { padding: 4px 16px; }
-  .cn-row { display: flex; align-items: flex-start; gap: 12px; padding: 13px 0; border-bottom: 1px solid #1a2030; }
-  .cn-row:last-child { border-bottom: none; }
+  .cn-card { padding: 15px 16px; }
+  .cn-row { display: flex; align-items: flex-start; gap: 12px; }
   .cn-avatar { width: 42px; height: 42px; border-radius: 12px; background: var(--grad); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; flex-shrink: 0; margin-top: 1px; }
   .cn-info { flex: 1; min-width: 0; }
   .cn-name-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
@@ -295,7 +294,7 @@ const PLAYERS = ["Thomas L.","JM B.","Hugo R.","Yann N.","Arnaud H.","Victor S."
 const LOGO_DATA_URI = "icon-512.png";
 const SESSION_KEY = "caisse-noire-session"; // {nom, role}
 const APP_VERSION_KEY = "caisse-noire-app-version";
-const APP_VERSION = "2026-07-02-03"; // À incrémenter à chaque mise à jour déployée
+const APP_VERSION = "2026-07-02-04"; // À incrémenter à chaque mise à jour déployée
 const SEASON_START = new Date(2026, 8, 1);  // 1er septembre 2026
 const SEASON_END = new Date(2027, 5, 30);   // 30 juin 2027
 
@@ -1337,9 +1336,9 @@ function renderQuickAddForm() {
 function renderCaisseNoireSummary() {
   const sortedPlayers = [...PLAYERS].sort((a, b) => playerTotal(b) - playerTotal(a));
   const TOP_COUNT = 5;
-  const topPlayers = sortedPlayers.slice(0, TOP_COUNT);
-  const restPlayers = sortedPlayers.slice(TOP_COUNT);
   const showAll = !!window.__showAllPlayers;
+  const visiblePlayers = showAll ? sortedPlayers : sortedPlayers.slice(0, TOP_COUNT);
+  const hasMore = sortedPlayers.length > TOP_COUNT;
   const expanded = window.__expandedPlayers || {};
 
   let html = `<div class="page-title">Caisse noire</div><div class="page-sub">Total et détail des actions de chaque joueur.</div>`;
@@ -1372,33 +1371,29 @@ function renderCaisseNoireSummary() {
       bubbles += `<span class="cn-bubble cn-bubble-more" data-collapse-player="${p}">Réduire</span>`;
     }
 
-    return `<div class="cn-row">
-      <div class="cn-avatar">${getInitials(p)}</div>
-      <div class="cn-info">
-        <div class="cn-name-row">
-          <span class="cn-name">${p}</span>
-          <span class="cn-amount">${fmt(total)} €</span>
+    return `<div class="card cn-card">
+      <div class="cn-row">
+        <div class="cn-avatar">${getInitials(p)}</div>
+        <div class="cn-info">
+          <div class="cn-name-row">
+            <span class="cn-name">${p}</span>
+            <span class="cn-amount">${fmt(total)} €</span>
+          </div>
+          ${items.length ? `<div class="cn-bubbles">${bubbles}</div>` : `<div class="cn-actions muted">Aucune action enregistrée</div>`}
         </div>
-        ${items.length ? `<div class="cn-bubbles">${bubbles}</div>` : `<div class="cn-actions muted">Aucune action enregistrée</div>`}
       </div>
     </div>`;
   };
 
-  html += `<div class="card cn-list">`;
   if (sortedPlayers.length === 0) {
-    html += `<div class="muted">Aucun joueur pour le moment.</div>`;
-  }
-  topPlayers.forEach(p => { html += renderPlayerCard(p); });
-  html += `</div>`;
-
-  if (restPlayers.length > 0) {
-    const toggleLabel = showAll ? "Masquer les autres joueurs ▲" : `Voir les ${restPlayers.length} autres joueurs ▾`;
-    html += `<div class="cn-toggle-detail cn-toggle-players">${toggleLabel}</div>`;
-    if (showAll) {
-      html += `<div class="card cn-list">`;
-      restPlayers.forEach(p => { html += renderPlayerCard(p); });
-      html += `</div>`;
-      html += `<div class="cn-toggle-detail cn-toggle-players">Masquer les autres joueurs ▲</div>`;
+    html += `<div class="card"><div class="muted">Aucun joueur pour le moment.</div></div>`;
+  } else {
+    if (hasMore) {
+      html += `<div class="expand-toggle" data-toggle-players="1">${showAll ? "Réduire ▲" : "Voir les autres ▾"}</div>`;
+    }
+    visiblePlayers.forEach(p => { html += renderPlayerCard(p); });
+    if (hasMore) {
+      html += `<div class="expand-toggle" data-toggle-players="1">${showAll ? "Réduire ▲" : "Voir les autres ▾"}</div>`;
     }
   }
 
@@ -1833,7 +1828,7 @@ function attachEvents() {
     render();
   };
 
-  document.querySelectorAll(".cn-toggle-players").forEach(el => {
+  document.querySelectorAll("[data-toggle-players]").forEach(el => {
     el.onclick = () => {
       window.__showAllPlayers = !window.__showAllPlayers;
       render();
