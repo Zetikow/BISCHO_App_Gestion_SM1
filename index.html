@@ -22,7 +22,17 @@
   }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body { margin: 0; padding: 0; background: #07080d; overflow-x: hidden; }
-  body { font-family: 'Archivo', -apple-system, BlinkMacSystemFont, sans-serif; color: #e8e8ee; padding-bottom: calc(92px + env(safe-area-inset-bottom)); }
+  body {
+    font-family: 'Archivo', -apple-system, BlinkMacSystemFont, sans-serif;
+    color: #e8e8ee;
+    padding-bottom: calc(92px + env(safe-area-inset-bottom));
+    background-image: linear-gradient(180deg, rgba(7,8,13,0.82), rgba(7,8,13,0.9)), url('bg-app.jpg');
+    background-size: cover;
+    background-position: center top;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    min-height: 100vh;
+  }
   #app { max-width: 100%; padding: 12px; }
   .header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; padding-top: env(safe-area-inset-top); }
   .header img { height: 36px; border-radius: 9px; }
@@ -94,6 +104,21 @@
   .entry-value { font-size: 11px; color: #5a6b8c; margin-top: 2px; }
   .entry-select { width: 76px; flex-shrink: 0; }
 
+  .cn-total-badge { display: flex; align-items: center; justify-content: center; gap: 6px; background: #1a1f30; border: 1px solid rgba(47,107,255,0.32); color: #cfe0ff; font-weight: 700; font-size: 12px; padding: 10px 16px; border-radius: 14px; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.4px; }
+  .cn-total-badge b { color: var(--accent2); font-size: 15px; font-weight: 900; letter-spacing: 0; text-transform: none; }
+  .cn-add-btn { margin-bottom: 14px; }
+  .cn-list { padding: 4px 16px; }
+  .cn-row { display: flex; align-items: flex-start; gap: 12px; padding: 13px 0; border-bottom: 1px solid #1a2030; }
+  .cn-row:last-child { border-bottom: none; }
+  .cn-avatar { width: 42px; height: 42px; border-radius: 12px; background: var(--grad); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; flex-shrink: 0; margin-top: 1px; }
+  .cn-info { flex: 1; min-width: 0; }
+  .cn-name-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .cn-name { font-size: 14px; font-weight: 700; color: #fff; }
+  .cn-amount { font-size: 15px; font-weight: 900; color: #ff7849; flex-shrink: 0; }
+  .cn-actions { font-size: 11px; color: #7a8aad; margin-top: 3px; font-weight: 600; line-height: 1.6; }
+  .cn-actions.muted { color: #4a5670; font-style: italic; }
+  .cn-toggle-detail { text-align: center; font-size: 11px; color: var(--accent2); font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; padding: 12px 0 4px; cursor: pointer; text-decoration: underline; }
+
   .presence-row { display: flex; align-items: center; justify-content: space-between; padding: 11px 0; border-bottom: 1px solid #1a2030; }
   .presence-row:last-child { border-bottom: none; }
   .toggle-group { display: flex; gap: 6px; }
@@ -107,12 +132,14 @@
   @media (min-width: 700px) {
     .login-card-outer { max-width: 360px; }
   }
-  .login-card { background: #11141f; border: 1px solid rgba(47,107,255,0.28); border-radius: 24px; padding: 32px 26px; text-align: center; position: relative; overflow: hidden; }
-  .login-card .login-glow { position: absolute; top: -60px; right: -60px; width: 180px; height: 180px; background: var(--glow); }
-  .login-card img { height: 72px; margin-bottom: 14px; border-radius: 18px; position: relative; }
-  .login-card .login-title { font-size: 23px; font-weight: 900; color: #fff; letter-spacing: -0.5px; margin-bottom: 4px; position: relative; }
-  .login-card .login-subtitle { font-size: 11px; color: #7a8aad; text-transform: uppercase; letter-spacing: 1.2px; font-weight: 700; margin-bottom: 6px; position: relative; }
-  .login-error { color: #ff5a5a; font-size: 12px; margin-top: 10px; font-weight: 600; }
+  .login-card { background: #11141fee; backdrop-filter: blur(6px); border: 1px solid rgba(47,107,255,0.28); border-radius: 24px; padding: 36px 26px; text-align: center; position: relative; overflow: hidden; }
+  .login-card .login-glow { position: absolute; top: -60px; right: -60px; width: 220px; height: 220px; background: var(--glow); }
+  .login-card img { height: 168px; margin-bottom: 16px; border-radius: 30px; position: relative; box-shadow: 0 10px 40px rgba(47,107,255,0.35); }
+  .login-card .login-title { font-size: 32px; font-weight: 900; color: #fff; letter-spacing: -0.6px; margin-bottom: 6px; position: relative; }
+  .login-card .login-subtitle { font-size: 13px; color: #7a8aad; text-transform: uppercase; letter-spacing: 1.4px; font-weight: 700; margin-bottom: 10px; position: relative; }
+  .login-error { color: #ff5a5a; font-size: 13px; margin-top: 10px; font-weight: 600; }
+  .login-card .field-label { font-size: 13px; }
+  .login-card select, .login-card input { font-size: 17px; padding: 13px; }
   .field-label { display: block; text-align: left; margin: 12px 0 5px; font-size: 11px; color: #5a6b8c; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; }
   .paiement-row { display: flex; justify-content: space-between; align-items: center; padding: 9px 0; border-bottom: 1px solid #1a2030; font-size: 12px; color: #c3ccde; }
 
@@ -256,7 +283,7 @@ const PLAYERS = ["Thomas L.","JM B.","Hugo R.","Yann N.","Arnaud H.","Victor S."
 const LOGO_DATA_URI = "icon-512.png";
 const SESSION_KEY = "caisse-noire-session"; // {nom, role}
 const APP_VERSION_KEY = "caisse-noire-app-version";
-const APP_VERSION = "2026-07-01-18"; // À incrémenter à chaque mise à jour déployée
+const APP_VERSION = "2026-07-02-01"; // À incrémenter à chaque mise à jour déployée
 const SEASON_START = new Date(2026, 8, 1);  // 1er septembre 2026
 const SEASON_END = new Date(2027, 5, 30);   // 30 juin 2027
 
@@ -787,7 +814,7 @@ function render() {
   }
 
   let html = `<div class="header ${currentPage === 'home' ? 'home-header' : ''}">
-    <img src="${LOGO_DATA_URI}" alt="Logo HBC Bischoffsheim"/>
+    <img src="${LOGO_DATA_URI}" alt="Logo LustuZone"/>
     <div><div class="title">LustuZone</div><div class="subtitle">App de Gestion</div></div>
     <div class="spacer"></div>
     <div class="avatar-wrap">
@@ -831,7 +858,7 @@ function render() {
   if (currentPage === "home") html += renderHome();
   else if (currentPage === "agenda") html += renderAgenda();
   else if (currentPage === "entry") html += renderEntry();
-  else if (currentPage === "table") html += renderTable();
+  else if (currentPage === "table") html += renderCaisseNoireSummary();
   else if (currentPage === "presence") html += renderPresencePage();
   else if (currentPage === "paiements") html += renderPaiementsPage();
 
@@ -897,7 +924,7 @@ function getTabsForRole(role) {
   ];
   if (role === "Joueur" || role === "Coach" || role === "Admin") {
     tabs.push({ id: "entry", label: "Saisir", main: true });
-    tabs.push({ id: "table", label: "Récap", main: true });
+    tabs.push({ id: "table", label: "Caisse noire", main: true });
   }
   if (role === "Coach" || role === "Admin") tabs.push({ id: "presence", label: "Présence", main: false });
   if (role === "Admin") tabs.push({ id: "paiements", label: "Paiements", main: false });
@@ -1287,8 +1314,50 @@ function renderEntry() {
   return html;
 }
 
-function renderTable() {
-  let html = `<div class="row-flex">
+function renderCaisseNoireSummary() {
+  const sortedPlayers = [...PLAYERS].sort((a, b) => playerTotal(b) - playerTotal(a));
+
+  let html = `<div class="page-title">Caisse noire</div><div class="page-sub">Total et détail des actions de chaque joueur.</div>`;
+
+  html += `<div class="cn-total-badge">Total équipe&nbsp;: <b>${fmt(grandTotal())} €</b></div>`;
+
+  html += `<button class="btn cn-add-btn" id="cn-add-action">+ Saisir une action</button>`;
+
+  html += `<div class="card cn-list">`;
+  if (sortedPlayers.length === 0) {
+    html += `<div class="muted">Aucun joueur pour le moment.</div>`;
+  }
+  sortedPlayers.forEach(p => {
+    const total = playerTotal(p);
+    const items = [];
+    ACTIONS.forEach((a, i) => {
+      const count = (grid[p] && grid[p][i]) || 0;
+      if (count > 0) items.push(`${a[0]} x${count}`);
+    });
+    html += `<div class="cn-row">
+      <div class="cn-avatar">${getInitials(p)}</div>
+      <div class="cn-info">
+        <div class="cn-name-row">
+          <span class="cn-name">${p}</span>
+          <span class="cn-amount">${fmt(total)} €</span>
+        </div>
+        ${items.length ? `<div class="cn-actions">${items.join(" · ")}</div>` : `<div class="cn-actions muted">Aucune action enregistrée</div>`}
+      </div>
+    </div>`;
+  });
+  html += `</div>`;
+
+  html += `<div class="cn-toggle-detail" id="cn-toggle-detail">${window.__showDetailTable ? "Masquer le tableau détaillé ▲" : "Voir le tableau détaillé ▾"}</div>`;
+
+  if (window.__showDetailTable) {
+    html += renderDetailTable();
+  }
+
+  return html;
+}
+
+function renderDetailTable() {
+  let html = `<div class="row-flex" style="margin-top:10px;">
     <button class="btn secondary" id="export-csv">Exporter CSV</button>
   </div>`;
   html += `<div class="table-wrap"><table>
@@ -1661,6 +1730,19 @@ function attachEvents() {
 
   const exportBtn = document.getElementById("export-csv");
   if (exportBtn) exportBtn.onclick = exportCSV;
+
+  const cnAddBtn = document.getElementById("cn-add-action");
+  if (cnAddBtn) cnAddBtn.onclick = () => {
+    vibrate();
+    currentPage = "entry";
+    render();
+  };
+
+  const cnToggleDetail = document.getElementById("cn-toggle-detail");
+  if (cnToggleDetail) cnToggleDetail.onclick = () => {
+    window.__showDetailTable = !window.__showDetailTable;
+    render();
+  };
 
   const toggleAddPaiement = document.getElementById("toggle-add-paiement");
   if (toggleAddPaiement) toggleAddPaiement.onclick = () => {
