@@ -23,15 +23,21 @@
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body { margin: 0; padding: 0; background: #07080d; overflow-x: hidden; }
   body {
+    position: relative;
     font-family: 'Archivo', -apple-system, BlinkMacSystemFont, sans-serif;
     color: #e8e8ee;
     padding-bottom: calc(92px + env(safe-area-inset-bottom));
+    min-height: 100vh;
+  }
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
     background-image: linear-gradient(180deg, rgba(7,8,13,0.45), rgba(7,8,13,0.62)), url('bg-app.jpg');
     background-size: cover;
     background-position: center top;
     background-repeat: no-repeat;
-    background-attachment: fixed;
-    min-height: 100vh;
   }
   #app { max-width: 100%; padding: 12px; }
   .header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; padding-top: env(safe-area-inset-top); }
@@ -104,8 +110,9 @@
   .entry-value { font-size: 11px; color: #5a6b8c; margin-top: 2px; }
   .entry-select { width: 76px; flex-shrink: 0; }
 
-  .cn-total-badge { display: flex; align-items: center; justify-content: center; gap: 6px; background: #1a1f30; border: 1px solid rgba(47,107,255,0.32); color: #cfe0ff; font-weight: 700; font-size: 12px; padding: 10px 16px; border-radius: 14px; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.4px; }
-  .cn-total-badge b { color: var(--accent2); font-size: 15px; font-weight: 900; letter-spacing: 0; text-transform: none; }
+  .cn-hero { text-align: center; background: linear-gradient(160deg, rgba(47,107,255,0.16), rgba(0,212,255,0.06)); border: 1px solid rgba(47,107,255,0.4); border-radius: 20px; padding: 22px 16px; margin-bottom: 14px; box-shadow: 0 0 30px rgba(47,107,255,0.12), inset 0 0 24px rgba(0,212,255,0.05); }
+  .cn-hero-label { font-size: 12px; color: #9db3e0; font-weight: 800; text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 6px; }
+  .cn-hero-value { font-size: 46px; font-weight: 900; color: #fff; letter-spacing: -1.2px; text-shadow: 0 0 24px rgba(0,212,255,0.45); }
   .cn-add-btn { margin-bottom: 14px; }
   .cn-card { padding: 15px 16px; }
   .cn-row { display: flex; align-items: flex-start; gap: 12px; }
@@ -294,7 +301,7 @@ const PLAYERS = ["Thomas L.","JM B.","Hugo R.","Yann N.","Arnaud H.","Victor S."
 const LOGO_DATA_URI = "icon-512.png";
 const SESSION_KEY = "caisse-noire-session"; // {nom, role}
 const APP_VERSION_KEY = "caisse-noire-app-version";
-const APP_VERSION = "2026-07-02-04"; // À incrémenter à chaque mise à jour déployée
+const APP_VERSION = "2026-07-02-06"; // À incrémenter à chaque mise à jour déployée
 const SEASON_START = new Date(2026, 8, 1);  // 1er septembre 2026
 const SEASON_END = new Date(2027, 5, 30);   // 30 juin 2027
 
@@ -1315,7 +1322,7 @@ function renderQuickAddForm() {
   }
   qtyHtml += `</div>`;
 
-  return `<div class="card qa-card">
+  return `<div class="add-form">
     <label class="field-label">Joueur</label>
     <select id="qa-player">
       ${PLAYERS.map(p => `<option value="${p}" ${p === target ? "selected" : ""}>${p}</option>`).join("")}
@@ -1326,10 +1333,7 @@ function renderQuickAddForm() {
     </select>
     <label class="field-label">Nombre</label>
     ${qtyHtml}
-    <div class="row-flex" style="margin-top:12px;">
-      <button class="btn" style="flex:1;" id="qa-submit">Ajouter</button>
-      <button class="btn secondary" style="flex:1;" id="qa-cancel">Annuler</button>
-    </div>
+    <button class="btn" id="qa-submit" style="margin-top:12px;">Ajouter</button>
   </div>`;
 }
 
@@ -1343,9 +1347,12 @@ function renderCaisseNoireSummary() {
 
   let html = `<div class="page-title">Caisse noire</div><div class="page-sub">Total et détail des actions de chaque joueur.</div>`;
 
-  html += `<div class="cn-total-badge">Total équipe&nbsp;: <b>${fmt(grandTotal())} €</b></div>`;
+  html += `<div class="cn-hero">
+    <div class="cn-hero-label">Total équipe</div>
+    <div class="cn-hero-value">${fmt(grandTotal())} €</div>
+  </div>`;
 
-  html += `<button class="btn cn-add-btn" id="cn-add-action">+ Saisir une action</button>`;
+  html += `<button class="add-toggle" id="cn-add-action">${window.__showQuickAdd ? "− Fermer" : "+ Saisir une action"}</button>`;
 
   if (window.__showQuickAdd) {
     html += renderQuickAddForm();
@@ -1388,12 +1395,9 @@ function renderCaisseNoireSummary() {
   if (sortedPlayers.length === 0) {
     html += `<div class="card"><div class="muted">Aucun joueur pour le moment.</div></div>`;
   } else {
-    if (hasMore) {
-      html += `<div class="expand-toggle" data-toggle-players="1">${showAll ? "Réduire ▲" : "Voir les autres ▾"}</div>`;
-    }
     visiblePlayers.forEach(p => { html += renderPlayerCard(p); });
     if (hasMore) {
-      html += `<div class="expand-toggle" data-toggle-players="1">${showAll ? "Réduire ▲" : "Voir les autres ▾"}</div>`;
+      html += `<div class="expand-toggle" data-toggle-players="1">${showAll ? "Réduire ▲" : "Voir les autres joueurs ▾"}</div>`;
     }
   }
 
