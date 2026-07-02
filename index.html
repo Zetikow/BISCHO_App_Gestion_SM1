@@ -128,14 +128,11 @@
   .cn-bubble-val { color: #ff8a5c; font-weight: 800; }
   .cn-bubble-more { color: var(--accent2); border-color: rgba(0,212,255,0.35); background: rgba(0,212,255,0.08); cursor: pointer; }
   .cn-toggle-detail { text-align: center; font-size: 11px; color: var(--accent2); font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; padding: 12px 0 4px; cursor: pointer; text-decoration: underline; }
-  .qa-card { animation: qaFadeIn 0.18s ease-out; }
-  @keyframes qaFadeIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
-  .qty-picker { margin-top: 2px; }
-  .qty-options { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
-  .qty-chip { padding: 10px 4px; border-radius: 10px; border: 1px solid #1c2333; background: #11141f; color: #c3ccde; font-size: 14px; font-weight: 700; cursor: pointer; font-family: 'Archivo', sans-serif; transition: transform 0.12s, background 0.15s; }
-  .qty-chip:active, .qty-chip.tap-active { transform: scale(0.94); }
-  .qty-chip.active { background: var(--grad); color: #fff; border-color: transparent; }
-  .qty-expand { text-align: center; font-size: 11px; color: var(--accent2); font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; padding: 7px 0; cursor: pointer; }
+  .add-btn-primary { margin-bottom: 14px; }
+  .qty-stepper { display: flex; align-items: center; justify-content: center; gap: 18px; padding: 6px 0 2px; }
+  .qty-btn { width: 44px; height: 44px; border-radius: 12px; border: 1px solid #1c2333; background: #11141f; color: #fff; font-size: 20px; font-weight: 800; cursor: pointer; font-family: 'Archivo', sans-serif; transition: transform 0.12s, background 0.15s; flex-shrink: 0; }
+  .qty-btn:active, .qty-btn.tap-active { transform: scale(0.92); background: var(--grad); }
+  .qty-value { min-width: 48px; text-align: center; font-size: 24px; font-weight: 900; color: #fff; }
 
   .presence-row { display: flex; align-items: center; justify-content: space-between; padding: 11px 0; border-bottom: 1px solid #1a2030; }
   .presence-row:last-child { border-bottom: none; }
@@ -208,6 +205,11 @@
   .ev-title { font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 3px; }
   .ev-date-full { font-size: 12px; color: #d7dcec; font-weight: 700; margin-bottom: 3px; text-transform: capitalize; }
   .ev-meta { font-size: 11px; color: #7a8aad; }
+  .justif-wrap { margin-top: 2px; }
+  .justif-input { font-size: 13px; padding: 9px 10px; border-color: rgba(255,90,90,0.35); background: #150e10; }
+  .justif-input:focus { outline-color: #ff5a5a; }
+  .justif-note { margin-top: 6px; font-size: 11px; color: #ff9c8a; background: rgba(255,90,90,0.08); border: 1px solid rgba(255,90,90,0.25); border-radius: 9px; padding: 7px 10px; }
+  .justif-note b { color: #ff5a5a; font-weight: 800; }
   .ev-actions { display: flex; gap: 10px; flex-shrink: 0; align-items: center; }
   .ev-edit, .ev-del { cursor: pointer; width: 30px; height: 30px; border-radius: 9px; display: flex; align-items: center; justify-content: center; background: #1a1f30; transition: transform 0.12s, background 0.15s; }
   .ev-edit:active, .ev-del:active, .ev-edit.tap-active, .ev-del.tap-active { transform: scale(0.9); }
@@ -225,7 +227,8 @@
   .nc-actions { display: flex; gap: 8px; position: relative; }
   .nc-actions .btn { flex: 1; }
 
-  .add-form { background: #0d1018; border: 1px dashed #243049; border-radius: 14px; padding: 12px; margin-bottom: 12px; }
+  .add-form { background: #0d1018; border: 1px dashed #243049; border-radius: 14px; padding: 12px; margin-bottom: 12px; animation: qaFadeIn 0.18s ease-out; }
+  @keyframes qaFadeIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
   .add-form input, .add-form select { margin-bottom: 6px; }
   .add-form .field-label { margin: 8px 0 4px; }
   .add-form-row { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -301,7 +304,7 @@ const PLAYERS = ["Thomas L.","JM B.","Hugo R.","Yann N.","Arnaud H.","Victor S."
 const LOGO_DATA_URI = "icon-512.png";
 const SESSION_KEY = "caisse-noire-session"; // {nom, role}
 const APP_VERSION_KEY = "caisse-noire-app-version";
-const APP_VERSION = "2026-07-02-06"; // À incrémenter à chaque mise à jour déployée
+const APP_VERSION = "2026-07-02-08"; // À incrémenter à chaque mise à jour déployée
 const SEASON_START = new Date(2026, 8, 1);  // 1er septembre 2026
 const SEASON_END = new Date(2027, 5, 30);   // 30 juin 2027
 
@@ -311,6 +314,7 @@ let presences = {}; // { "YYYY-MM-DD_Nom": "1"/"0" }
 let paiements = []; // [[id, joueur, montant, date, commentaire], ...]
 let evenements = []; // [[id, date, heure, type, titre, lieu], ...]
 let presenceEvenements = {}; // { eventId_nom: "Oui"/"Non" }
+let presenceJustifications = {}; // { eventId_nom: "texte du motif" }
 
 let session = JSON.parse(localStorage.getItem(SESSION_KEY) || "null");
 if (session && !session.code) { session = null; localStorage.removeItem(SESSION_KEY); }
@@ -367,12 +371,23 @@ function parsePresences(rows) {
 
 function parsePresenceEvenements(rows) {
   const p = {};
+  const j = {};
   for (let i = 1; i < rows.length; i++) {
-    const [eventId, nom, present] = rows[i];
+    const [eventId, nom, present, justification] = rows[i];
     if (!eventId) continue;
     p[`${eventId}_${nom}`] = String(present);
+    if (justification) j[`${eventId}_${nom}`] = String(justification);
   }
-  return p;
+  return { p, j };
+}
+
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
 function isFormOpen() {
@@ -389,7 +404,9 @@ async function fetchAll() {
     presences = parsePresences(data.presences || []);
     paiements = (data.paiements || []).slice(1);
     evenements = (data.evenements || []).slice(1).filter(r => r[0]);
-    presenceEvenements = parsePresenceEvenements(data.presenceEvenements || []);
+    const parsedPE = parsePresenceEvenements(data.presenceEvenements || []);
+    presenceEvenements = parsedPE.p;
+    presenceJustifications = parsedPE.j;
     isOnline = true;
   } catch (err) {
     isOnline = false;
@@ -490,6 +507,16 @@ async function writePresenceEvenementApi(eventId, nom, present) {
   render();
   try {
     await fetch(`${GOOGLE_SCRIPT_URL}?action=setPresenceEvenement&eventId=${encodeURIComponent(eventId)}&nom=${encodeURIComponent(nom)}&present=${present ? "Oui" : "Non"}&authNom=${encodeURIComponent(session.nom)}&authCode=${encodeURIComponent(session.code)}`);
+    isOnline = true;
+  } catch (err) { isOnline = false; }
+  render();
+}
+
+async function writeJustificationApi(eventId, nom, texte) {
+  presenceJustifications[`${eventId}_${nom}`] = texte;
+  const present = presenceEvenements[`${eventId}_${nom}`] === "Oui" ? "Oui" : "Non";
+  try {
+    await fetch(`${GOOGLE_SCRIPT_URL}?action=setPresenceEvenement&eventId=${encodeURIComponent(eventId)}&nom=${encodeURIComponent(nom)}&present=${encodeURIComponent(present)}&justification=${encodeURIComponent(texte)}&authNom=${encodeURIComponent(session.nom)}&authCode=${encodeURIComponent(session.code)}`);
     isOnline = true;
   } catch (err) { isOnline = false; }
   render();
@@ -1183,7 +1210,7 @@ function renderAgenda() {
     if (session.role === "Admin") {
       html += `<button class="add-toggle" id="generate-trainings" style="border-style:solid; color:#7a8aad;">📅 Générer les entraînements de la saison (mar/jeu)</button>`;
     }
-    html += `<button class="add-toggle" id="toggle-add-event">${showAddEvent ? "− Fermer" : "+ Ajouter un événement"}</button>`;
+    html += `<button class="btn add-btn-primary" id="toggle-add-event">${showAddEvent ? "Fermer" : "Ajouter un événement"}</button>`;
     if (showAddEvent) {
       html += `<div class="add-form">
         <label class="field-label">Date</label>
@@ -1288,7 +1315,11 @@ function renderEventCard(ev, canManage, isPast) {
       ${(!isPast && session.role !== "Bénévole") ? `<div class="toggle-group" style="margin-top:8px;">
         <button class="toggle-btn ${val === 'Oui' ? 'present' : ''}" data-event-presence="${id}" data-event-val="1">Présent</button>
         <button class="toggle-btn ${val === 'Non' ? 'absent' : ''}" data-event-presence="${id}" data-event-val="0">Absent</button>
-      </div>` : ""}
+      </div>
+      ${val === 'Non' ? `<div class="justif-wrap">
+        <label class="field-label" style="margin-top:8px;">Motif de l'absence</label>
+        <input type="text" id="justif-${id}" class="justif-input" data-justif-event="${id}" placeholder="ex : blessure, travail, transport..." value="${escapeHtml(presenceJustifications[`${id}_${session.nom}`] || '')}" />
+      </div>` : ""}` : ""}
     </div>
     ${canManage ? `<div class="ev-actions">
       ${iconBtn(ICON_EDIT, "ev-edit", `data-edit-event="${id}"`)}
@@ -1300,27 +1331,13 @@ function renderEventCard(ev, canManage, isPast) {
 function renderQuickAddForm() {
   const target = window.__qaPlayer || (PLAYERS.includes(session.nom) ? session.nom : PLAYERS[0]);
   const actionIdx = window.__qaAction != null ? window.__qaAction : 0;
-  const QTY_MAX = 50;
-  const PAGE_SIZE = 5;
-  const maxPage = Math.ceil(QTY_MAX / PAGE_SIZE) - 1;
-  const page = Math.min(Math.max(window.__qaQtyPage || 0, 0), maxPage);
-  const selected = window.__qaQty || 1;
-  const start = page * PAGE_SIZE + 1;
-  const end = Math.min(start + PAGE_SIZE - 1, QTY_MAX);
+  const qty = window.__qaQty || 1;
 
-  let qtyHtml = `<div class="qty-picker">`;
-  if (page > 0) {
-    qtyHtml += `<div class="qty-expand" data-qty-page="${page - 1}">▲ Voir plus</div>`;
-  }
-  qtyHtml += `<div class="qty-options">`;
-  for (let n = start; n <= end; n++) {
-    qtyHtml += `<button type="button" class="qty-chip ${n === selected ? "active" : ""}" data-qty-value="${n}">${n}</button>`;
-  }
-  qtyHtml += `</div>`;
-  if (page < maxPage) {
-    qtyHtml += `<div class="qty-expand" data-qty-page="${page + 1}">▼ Voir plus</div>`;
-  }
-  qtyHtml += `</div>`;
+  const qtyHtml = `<div class="qty-stepper">
+    <button type="button" class="qty-btn" data-qty-delta="-1">−</button>
+    <div class="qty-value">${qty}</div>
+    <button type="button" class="qty-btn" data-qty-delta="1">+</button>
+  </div>`;
 
   return `<div class="add-form">
     <label class="field-label">Joueur</label>
@@ -1352,7 +1369,7 @@ function renderCaisseNoireSummary() {
     <div class="cn-hero-value">${fmt(grandTotal())} €</div>
   </div>`;
 
-  html += `<button class="add-toggle" id="cn-add-action">${window.__showQuickAdd ? "− Fermer" : "+ Saisir une action"}</button>`;
+  html += `<button class="btn add-btn-primary" id="cn-add-action">${window.__showQuickAdd ? "− Fermer" : "+ Saisir une action"}</button>`;
 
   if (window.__showQuickAdd) {
     html += renderQuickAddForm();
@@ -1513,6 +1530,7 @@ function renderPresenceEventCard(ev, isPast) {
       </div>
       <div class="section-h" style="margin:14px 0 6px;">Pointer ${dayName}</div>`;
     roster.forEach(r => {
+      const justif = presenceJustifications[`${id}_${r.p}`];
       html += `<div class="pointer-row">
         <div style="font-size:12px; color:#e8e8ee;">${r.p}</div>
         <div class="toggle-group">
@@ -1520,6 +1538,9 @@ function renderPresenceEventCard(ev, isPast) {
           <button class="toggle-btn ${r.val === 'Non' ? 'absent' : ''}" data-mark-presence="${id}" data-mark-player="${r.p}" data-mark-val="0">Non</button>
         </div>
       </div>`;
+      if (r.val === "Non" && justif) {
+        html += `<div class="justif-note"><b>Motif de ${r.p} :</b> ${escapeHtml(justif)}</div>`;
+      }
     });
     html += `</div>`;
   }
@@ -1541,7 +1562,7 @@ function renderPaiementsPage() {
     <div class="pay-summary-sub">Sur ${fmt(totalDu)} € dus · ${fmt(totalPayeAll)} € reçus</div>
   </div>`;
 
-  html += `<button class="add-toggle" id="toggle-add-paiement">${window.__showAddPaiement ? "− Fermer" : "+ Ajouter un paiement"}</button>`;
+  html += `<button class="btn add-btn-primary" id="toggle-add-paiement">${window.__showAddPaiement ? "Fermer" : "Ajouter un paiement"}</button>`;
   if (window.__showAddPaiement) {
     html += `<div class="add-form">
       <label class="field-label">Joueur</label>
@@ -1614,7 +1635,7 @@ function vibrate() {
 
 // Retour visuel immédiat au toucher, indépendant du rafraîchissement de la page
 // (le CSS :active seul n'a pas toujours le temps de s'afficher avant le re-rendu)
-const TAP_SELECTOR = ".btn, .nav-btn, .toggle-btn, .ev-edit, .ev-del, .bottom-nav button, .expand-toggle, .avatar-btn, .avatar-menu-item, .qty-chip";
+const TAP_SELECTOR = ".btn, .nav-btn, .toggle-btn, .ev-edit, .ev-del, .bottom-nav button, .expand-toggle, .avatar-btn, .avatar-menu-item, .qty-btn, .add-toggle";
 document.addEventListener("touchstart", (e) => {
   const el = e.target.closest(TAP_SELECTOR);
   if (el) el.classList.add("tap-active");
@@ -1641,6 +1662,15 @@ function attachEvents() {
       const eventId = e.currentTarget.dataset.eventPresence;
       const val = e.currentTarget.dataset.eventVal === "1";
       writePresenceEvenementApi(eventId, session.nom, val);
+    };
+  });
+
+  document.querySelectorAll("[data-justif-event]").forEach(input => {
+    input.onblur = (e) => {
+      const eventId = e.target.dataset.justifEvent;
+      const texte = e.target.value.trim();
+      if (texte === (presenceJustifications[`${eventId}_${session.nom}`] || "")) return;
+      writeJustificationApi(eventId, session.nom, texte);
     };
   });
 
@@ -1789,27 +1819,16 @@ function attachEvents() {
     window.__showQuickAdd = opening;
     if (opening) {
       window.__qaQty = 1;
-      window.__qaQtyPage = 0;
     }
     render();
   };
 
-  const qaCancel = document.getElementById("qa-cancel");
-  if (qaCancel) qaCancel.onclick = () => {
-    window.__showQuickAdd = false;
-    render();
-  };
-
-  document.querySelectorAll("[data-qty-value]").forEach(el => {
+  document.querySelectorAll("[data-qty-delta]").forEach(el => {
     el.onclick = () => {
-      window.__qaQty = parseInt(el.dataset.qtyValue, 10);
-      render();
-    };
-  });
-
-  document.querySelectorAll("[data-qty-page]").forEach(el => {
-    el.onclick = () => {
-      window.__qaQtyPage = parseInt(el.dataset.qtyPage, 10);
+      vibrate();
+      const delta = parseInt(el.dataset.qtyDelta, 10);
+      const current = window.__qaQty || 1;
+      window.__qaQty = Math.min(50, Math.max(1, current + delta));
       render();
     };
   });
