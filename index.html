@@ -173,6 +173,10 @@
 
   #app { border: 1px solid rgba(0,212,255,0.28); border-radius: 20px; animation: appShimmer 3.2s ease-in-out infinite; }
 
+  body.login-mode { padding-bottom: 0; }
+  body.login-mode #app { min-height: 100vh; display: flex; flex-direction: column; }
+  body.login-mode .login-wrap { flex: 1; min-height: 0; }
+
   @keyframes appShimmer {
     0%, 100% { border-color: rgba(0,212,255,0.16); box-shadow: 0 0 14px rgba(0,212,255,0.08); }
     50% { border-color: rgba(0,212,255,0.42); box-shadow: 0 0 22px rgba(0,212,255,0.2); }
@@ -319,7 +323,7 @@ const PLAYERS = ["Thomas L.","JM B.","Hugo R.","Yann N.","Arnaud H.","Victor S."
 const LOGO_DATA_URI = "icon-512.png";
 const SESSION_KEY = "caisse-noire-session"; // {nom, role}
 const APP_VERSION_KEY = "caisse-noire-app-version";
-const APP_VERSION = "2026-07-02-12"; // À incrémenter à chaque mise à jour déployée
+const APP_VERSION = "2026-07-02-13"; // À incrémenter à chaque mise à jour déployée
 const SEASON_START = new Date(2026, 8, 1);  // 1er septembre 2026
 const SEASON_END = new Date(2027, 5, 30);   // 30 juin 2027
 
@@ -868,10 +872,12 @@ function render() {
   const activeSelEnd = active && typeof active.selectionEnd === "number" ? active.selectionEnd : null;
 
   if (!session) {
+    document.body.classList.add("login-mode");
     app.innerHTML = renderLogin();
     attachLoginEvents();
     return;
   }
+  document.body.classList.remove("login-mode");
 
   let html = `<div class="header ${currentPage === 'home' ? 'home-header' : ''}">
     <img src="${LOGO_DATA_URI}" alt="Logo LustuZone"/>
