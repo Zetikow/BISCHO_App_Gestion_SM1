@@ -26,7 +26,7 @@
     font-family: 'Archivo', -apple-system, BlinkMacSystemFont, sans-serif;
     color: #e8e8ee;
     padding-bottom: calc(92px + env(safe-area-inset-bottom));
-    background-image: linear-gradient(180deg, rgba(7,8,13,0.82), rgba(7,8,13,0.9)), url('bg-app.jpg');
+    background-image: linear-gradient(180deg, rgba(7,8,13,0.45), rgba(7,8,13,0.62)), url('bg-app.jpg');
     background-size: cover;
     background-position: center top;
     background-repeat: no-repeat;
@@ -117,7 +117,13 @@
   .cn-amount { font-size: 15px; font-weight: 900; color: #ff7849; flex-shrink: 0; }
   .cn-actions { font-size: 11px; color: #7a8aad; margin-top: 3px; font-weight: 600; line-height: 1.6; }
   .cn-actions.muted { color: #4a5670; font-style: italic; }
+  .cn-bubbles { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 7px; }
+  .cn-bubble { display: inline-flex; align-items: center; gap: 5px; background: #1a1f30; border: 1px solid #243049; color: #c3ccde; font-size: 10.5px; font-weight: 700; padding: 5px 10px; border-radius: 20px; white-space: nowrap; }
+  .cn-bubble-val { color: #ff8a5c; font-weight: 800; }
+  .cn-bubble-more { color: var(--accent2); border-color: rgba(0,212,255,0.35); background: rgba(0,212,255,0.08); cursor: pointer; }
   .cn-toggle-detail { text-align: center; font-size: 11px; color: var(--accent2); font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; padding: 12px 0 4px; cursor: pointer; text-decoration: underline; }
+  .qa-card { animation: qaFadeIn 0.18s ease-out; }
+  @keyframes qaFadeIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
 
   .presence-row { display: flex; align-items: center; justify-content: space-between; padding: 11px 0; border-bottom: 1px solid #1a2030; }
   .presence-row:last-child { border-bottom: none; }
@@ -283,7 +289,7 @@ const PLAYERS = ["Thomas L.","JM B.","Hugo R.","Yann N.","Arnaud H.","Victor S."
 const LOGO_DATA_URI = "icon-512.png";
 const SESSION_KEY = "caisse-noire-session"; // {nom, role}
 const APP_VERSION_KEY = "caisse-noire-app-version";
-const APP_VERSION = "2026-07-02-01"; // À incrémenter à chaque mise à jour déployée
+const APP_VERSION = "2026-07-02-02"; // À incrémenter à chaque mise à jour déployée
 const SEASON_START = new Date(2026, 8, 1);  // 1er septembre 2026
 const SEASON_END = new Date(2027, 5, 30);   // 30 juin 2027
 
@@ -857,7 +863,6 @@ function render() {
 
   if (currentPage === "home") html += renderHome();
   else if (currentPage === "agenda") html += renderAgenda();
-  else if (currentPage === "entry") html += renderEntry();
   else if (currentPage === "table") html += renderCaisseNoireSummary();
   else if (currentPage === "presence") html += renderPresencePage();
   else if (currentPage === "paiements") html += renderPaiementsPage();
@@ -923,8 +928,7 @@ function getTabsForRole(role) {
     { id: "agenda", label: "Agenda", main: true },
   ];
   if (role === "Joueur" || role === "Coach" || role === "Admin") {
-    tabs.push({ id: "entry", label: "Saisir", main: true });
-    tabs.push({ id: "table", label: "Caisse noire", main: true });
+    tabs.push({ id: "table", label: "Caisse", main: true });
   }
   if (role === "Coach" || role === "Admin") tabs.push({ id: "presence", label: "Présence", main: false });
   if (role === "Admin") tabs.push({ id: "paiements", label: "Paiements", main: false });
@@ -1281,41 +1285,36 @@ function renderEventCard(ev, canManage, isPast) {
   </div>`;
 }
 
-function renderEntry() {
-  let html = `<div class="card">
-    <label class="muted">Qui a fait l'action ?</label><br/>
-    <select id="entry-target" style="margin-top:6px;">
-      ${PLAYERS.map(p => `<option value="${p}" ${p === (window.__entryTarget || session.nom) ? "selected" : ""}>${p}</option>`).join("")}
+function renderQuickAddForm() {
+  const target = window.__qaPlayer || (PLAYERS.includes(session.nom) ? session.nom : PLAYERS[0]);
+  const actionIdx = window.__qaAction != null ? window.__qaAction : 0;
+  return `<div class="card qa-card">
+    <label class="field-label">Joueur</label>
+    <select id="qa-player">
+      ${PLAYERS.map(p => `<option value="${p}" ${p === target ? "selected" : ""}>${p}</option>`).join("")}
     </select>
+    <label class="field-label">Action</label>
+    <select id="qa-action">
+      ${ACTIONS.map((a, i) => `<option value="${i}" ${i == actionIdx ? "selected" : ""}>${a[0]} (${fmt(a[1])} €)</option>`).join("")}
+    </select>
+    <label class="field-label">Nombre</label>
+    <select id="qa-qty">
+      ${Array.from({length: 10}, (_, v) => v + 1).map(v => `<option value="${v}" ${v === 1 ? "selected" : ""}>${v}</option>`).join("")}
+    </select>
+    <div class="row-flex" style="margin-top:12px;">
+      <button class="btn" style="flex:1;" id="qa-submit">Ajouter</button>
+      <button class="btn secondary" style="flex:1;" id="qa-cancel">Annuler</button>
+    </div>
   </div>`;
-
-  const target = window.__entryTarget || (PLAYERS.includes(session.nom) ? session.nom : PLAYERS[0]);
-
-  html += `<div class="card" style="padding: 4px 16px;">`;
-  ACTIONS.forEach((a, i) => {
-    const count = (grid[target] && grid[target][i]) || 0;
-    html += `<div class="entry-row">
-      <div>
-        <div class="entry-name">${a[0]}</div>
-        <div class="entry-value">${fmt(a[1])} € / unité ${count > 0 ? "· " + fmt(count * a[1]) + " €" : ""}</div>
-      </div>
-      <select class="entry-select cell-select" data-player="${target}" data-action="${i}">
-        ${Array.from({length: 51}, (_, v) => `<option value="${v}" ${count === v ? "selected" : ""}>${v}</option>`).join("")}
-      </select>
-    </div>`;
-  });
-  html += `</div>`;
-
-  html += `<div class="card">
-    <div class="muted">Total de ${target}</div>
-    <div class="big-number">${fmt(playerTotal(target))} €</div>
-  </div>`;
-
-  return html;
 }
 
 function renderCaisseNoireSummary() {
   const sortedPlayers = [...PLAYERS].sort((a, b) => playerTotal(b) - playerTotal(a));
+  const TOP_COUNT = 5;
+  const topPlayers = sortedPlayers.slice(0, TOP_COUNT);
+  const restPlayers = sortedPlayers.slice(TOP_COUNT);
+  const showAll = !!window.__showAllPlayers;
+  const expanded = window.__expandedPlayers || {};
 
   let html = `<div class="page-title">Caisse noire</div><div class="page-sub">Total et détail des actions de chaque joueur.</div>`;
 
@@ -1323,29 +1322,55 @@ function renderCaisseNoireSummary() {
 
   html += `<button class="btn cn-add-btn" id="cn-add-action">+ Saisir une action</button>`;
 
-  html += `<div class="card cn-list">`;
-  if (sortedPlayers.length === 0) {
-    html += `<div class="muted">Aucun joueur pour le moment.</div>`;
+  if (window.__showQuickAdd) {
+    html += renderQuickAddForm();
   }
-  sortedPlayers.forEach(p => {
+
+  const renderPlayerCard = (p) => {
     const total = playerTotal(p);
     const items = [];
     ACTIONS.forEach((a, i) => {
       const count = (grid[p] && grid[p][i]) || 0;
-      if (count > 0) items.push(`${a[0]} x${count}`);
+      if (count > 0) items.push({ label: a[0], count, value: count * a[1] });
     });
-    html += `<div class="cn-row">
+    const isExpanded = !!expanded[p];
+    const visibleItems = isExpanded ? items : items.slice(0, 3);
+    const hiddenCount = items.length - visibleItems.length;
+
+    let bubbles = visibleItems.map(it =>
+      `<span class="cn-bubble">${it.label} ×${it.count} <span class="cn-bubble-val">${fmt(it.value)}€</span></span>`
+    ).join("");
+    if (hiddenCount > 0) {
+      bubbles += `<span class="cn-bubble cn-bubble-more" data-expand-player="${p}">+${hiddenCount} autre${hiddenCount > 1 ? "s" : ""}</span>`;
+    } else if (isExpanded && items.length > 3) {
+      bubbles += `<span class="cn-bubble cn-bubble-more" data-collapse-player="${p}">Réduire</span>`;
+    }
+
+    return `<div class="cn-row">
       <div class="cn-avatar">${getInitials(p)}</div>
       <div class="cn-info">
         <div class="cn-name-row">
           <span class="cn-name">${p}</span>
           <span class="cn-amount">${fmt(total)} €</span>
         </div>
-        ${items.length ? `<div class="cn-actions">${items.join(" · ")}</div>` : `<div class="cn-actions muted">Aucune action enregistrée</div>`}
+        ${items.length ? `<div class="cn-bubbles">${bubbles}</div>` : `<div class="cn-actions muted">Aucune action enregistrée</div>`}
       </div>
     </div>`;
-  });
+  };
+
+  html += `<div class="card cn-list">`;
+  if (sortedPlayers.length === 0) {
+    html += `<div class="muted">Aucun joueur pour le moment.</div>`;
+  }
+  topPlayers.forEach(p => { html += renderPlayerCard(p); });
+  if (restPlayers.length > 0 && showAll) {
+    restPlayers.forEach(p => { html += renderPlayerCard(p); });
+  }
   html += `</div>`;
+
+  if (restPlayers.length > 0) {
+    html += `<div class="cn-toggle-detail" id="cn-toggle-players">${showAll ? "Masquer les autres joueurs ▲" : `Voir les ${restPlayers.length} autres joueurs ▾`}</div>`;
+  }
 
   html += `<div class="cn-toggle-detail" id="cn-toggle-detail">${window.__showDetailTable ? "Masquer le tableau détaillé ▲" : "Voir le tableau détaillé ▾"}</div>`;
 
@@ -1708,9 +1733,6 @@ function attachEvents() {
     changeCodeApi(oldCode, n1);
   };
 
-  const entryTarget = document.getElementById("entry-target");
-  if (entryTarget) entryTarget.onchange = (e) => { window.__entryTarget = e.target.value; render(); };
-
   document.querySelectorAll(".cell-select").forEach(sel => {
     sel.onchange = (e) => {
       const p = e.target.dataset.player;
@@ -1734,8 +1756,26 @@ function attachEvents() {
   const cnAddBtn = document.getElementById("cn-add-action");
   if (cnAddBtn) cnAddBtn.onclick = () => {
     vibrate();
-    currentPage = "entry";
+    window.__showQuickAdd = !window.__showQuickAdd;
     render();
+  };
+
+  const qaCancel = document.getElementById("qa-cancel");
+  if (qaCancel) qaCancel.onclick = () => {
+    window.__showQuickAdd = false;
+    render();
+  };
+
+  const qaSubmit = document.getElementById("qa-submit");
+  if (qaSubmit) qaSubmit.onclick = () => {
+    const player = document.getElementById("qa-player").value;
+    const actionIdx = parseInt(document.getElementById("qa-action").value, 10);
+    const qty = parseInt(document.getElementById("qa-qty").value, 10);
+    window.__qaPlayer = player;
+    window.__qaAction = actionIdx;
+    const current = (grid[player] && grid[player][actionIdx]) || 0;
+    window.__showQuickAdd = false;
+    writeCell(player, actionIdx, current + qty);
   };
 
   const cnToggleDetail = document.getElementById("cn-toggle-detail");
@@ -1743,6 +1783,28 @@ function attachEvents() {
     window.__showDetailTable = !window.__showDetailTable;
     render();
   };
+
+  const cnTogglePlayers = document.getElementById("cn-toggle-players");
+  if (cnTogglePlayers) cnTogglePlayers.onclick = () => {
+    window.__showAllPlayers = !window.__showAllPlayers;
+    render();
+  };
+
+  document.querySelectorAll("[data-expand-player]").forEach(el => {
+    el.onclick = () => {
+      window.__expandedPlayers = window.__expandedPlayers || {};
+      window.__expandedPlayers[el.dataset.expandPlayer] = true;
+      render();
+    };
+  });
+
+  document.querySelectorAll("[data-collapse-player]").forEach(el => {
+    el.onclick = () => {
+      window.__expandedPlayers = window.__expandedPlayers || {};
+      window.__expandedPlayers[el.dataset.collapsePlayer] = false;
+      render();
+    };
+  });
 
   const toggleAddPaiement = document.getElementById("toggle-add-paiement");
   if (toggleAddPaiement) toggleAddPaiement.onclick = () => {
