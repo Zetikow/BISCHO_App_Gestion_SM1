@@ -124,6 +124,12 @@
   .cn-toggle-detail { text-align: center; font-size: 11px; color: var(--accent2); font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; padding: 12px 0 4px; cursor: pointer; text-decoration: underline; }
   .qa-card { animation: qaFadeIn 0.18s ease-out; }
   @keyframes qaFadeIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
+  .qty-picker { margin-top: 2px; }
+  .qty-options { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+  .qty-chip { padding: 10px 4px; border-radius: 10px; border: 1px solid #1c2333; background: #11141f; color: #c3ccde; font-size: 14px; font-weight: 700; cursor: pointer; font-family: 'Archivo', sans-serif; transition: transform 0.12s, background 0.15s; }
+  .qty-chip:active, .qty-chip.tap-active { transform: scale(0.94); }
+  .qty-chip.active { background: var(--grad); color: #fff; border-color: transparent; }
+  .qty-expand { text-align: center; font-size: 11px; color: var(--accent2); font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; padding: 7px 0; cursor: pointer; }
 
   .presence-row { display: flex; align-items: center; justify-content: space-between; padding: 11px 0; border-bottom: 1px solid #1a2030; }
   .presence-row:last-child { border-bottom: none; }
@@ -289,7 +295,7 @@ const PLAYERS = ["Thomas L.","JM B.","Hugo R.","Yann N.","Arnaud H.","Victor S."
 const LOGO_DATA_URI = "icon-512.png";
 const SESSION_KEY = "caisse-noire-session"; // {nom, role}
 const APP_VERSION_KEY = "caisse-noire-app-version";
-const APP_VERSION = "2026-07-02-02"; // À incrémenter à chaque mise à jour déployée
+const APP_VERSION = "2026-07-02-03"; // À incrémenter à chaque mise à jour déployée
 const SEASON_START = new Date(2026, 8, 1);  // 1er septembre 2026
 const SEASON_END = new Date(2027, 5, 30);   // 30 juin 2027
 
@@ -1288,6 +1294,28 @@ function renderEventCard(ev, canManage, isPast) {
 function renderQuickAddForm() {
   const target = window.__qaPlayer || (PLAYERS.includes(session.nom) ? session.nom : PLAYERS[0]);
   const actionIdx = window.__qaAction != null ? window.__qaAction : 0;
+  const QTY_MAX = 50;
+  const PAGE_SIZE = 5;
+  const maxPage = Math.ceil(QTY_MAX / PAGE_SIZE) - 1;
+  const page = Math.min(Math.max(window.__qaQtyPage || 0, 0), maxPage);
+  const selected = window.__qaQty || 1;
+  const start = page * PAGE_SIZE + 1;
+  const end = Math.min(start + PAGE_SIZE - 1, QTY_MAX);
+
+  let qtyHtml = `<div class="qty-picker">`;
+  if (page > 0) {
+    qtyHtml += `<div class="qty-expand" data-qty-page="${page - 1}">▲ Voir plus</div>`;
+  }
+  qtyHtml += `<div class="qty-options">`;
+  for (let n = start; n <= end; n++) {
+    qtyHtml += `<button type="button" class="qty-chip ${n === selected ? "active" : ""}" data-qty-value="${n}">${n}</button>`;
+  }
+  qtyHtml += `</div>`;
+  if (page < maxPage) {
+    qtyHtml += `<div class="qty-expand" data-qty-page="${page + 1}">▼ Voir plus</div>`;
+  }
+  qtyHtml += `</div>`;
+
   return `<div class="card qa-card">
     <label class="field-label">Joueur</label>
     <select id="qa-player">
@@ -1298,9 +1326,7 @@ function renderQuickAddForm() {
       ${ACTIONS.map((a, i) => `<option value="${i}" ${i == actionIdx ? "selected" : ""}>${a[0]} (${fmt(a[1])} €)</option>`).join("")}
     </select>
     <label class="field-label">Nombre</label>
-    <select id="qa-qty">
-      ${Array.from({length: 10}, (_, v) => v + 1).map(v => `<option value="${v}" ${v === 1 ? "selected" : ""}>${v}</option>`).join("")}
-    </select>
+    ${qtyHtml}
     <div class="row-flex" style="margin-top:12px;">
       <button class="btn" style="flex:1;" id="qa-submit">Ajouter</button>
       <button class="btn secondary" style="flex:1;" id="qa-cancel">Annuler</button>
@@ -1363,13 +1389,17 @@ function renderCaisseNoireSummary() {
     html += `<div class="muted">Aucun joueur pour le moment.</div>`;
   }
   topPlayers.forEach(p => { html += renderPlayerCard(p); });
-  if (restPlayers.length > 0 && showAll) {
-    restPlayers.forEach(p => { html += renderPlayerCard(p); });
-  }
   html += `</div>`;
 
   if (restPlayers.length > 0) {
-    html += `<div class="cn-toggle-detail" id="cn-toggle-players">${showAll ? "Masquer les autres joueurs ▲" : `Voir les ${restPlayers.length} autres joueurs ▾`}</div>`;
+    const toggleLabel = showAll ? "Masquer les autres joueurs ▲" : `Voir les ${restPlayers.length} autres joueurs ▾`;
+    html += `<div class="cn-toggle-detail cn-toggle-players">${toggleLabel}</div>`;
+    if (showAll) {
+      html += `<div class="card cn-list">`;
+      restPlayers.forEach(p => { html += renderPlayerCard(p); });
+      html += `</div>`;
+      html += `<div class="cn-toggle-detail cn-toggle-players">Masquer les autres joueurs ▲</div>`;
+    }
   }
 
   html += `<div class="cn-toggle-detail" id="cn-toggle-detail">${window.__showDetailTable ? "Masquer le tableau détaillé ▲" : "Voir le tableau détaillé ▾"}</div>`;
@@ -1585,7 +1615,7 @@ function vibrate() {
 
 // Retour visuel immédiat au toucher, indépendant du rafraîchissement de la page
 // (le CSS :active seul n'a pas toujours le temps de s'afficher avant le re-rendu)
-const TAP_SELECTOR = ".btn, .nav-btn, .toggle-btn, .ev-edit, .ev-del, .bottom-nav button, .expand-toggle, .avatar-btn, .avatar-menu-item";
+const TAP_SELECTOR = ".btn, .nav-btn, .toggle-btn, .ev-edit, .ev-del, .bottom-nav button, .expand-toggle, .avatar-btn, .avatar-menu-item, .qty-chip";
 document.addEventListener("touchstart", (e) => {
   const el = e.target.closest(TAP_SELECTOR);
   if (el) el.classList.add("tap-active");
@@ -1756,7 +1786,12 @@ function attachEvents() {
   const cnAddBtn = document.getElementById("cn-add-action");
   if (cnAddBtn) cnAddBtn.onclick = () => {
     vibrate();
-    window.__showQuickAdd = !window.__showQuickAdd;
+    const opening = !window.__showQuickAdd;
+    window.__showQuickAdd = opening;
+    if (opening) {
+      window.__qaQty = 1;
+      window.__qaQtyPage = 0;
+    }
     render();
   };
 
@@ -1766,11 +1801,25 @@ function attachEvents() {
     render();
   };
 
+  document.querySelectorAll("[data-qty-value]").forEach(el => {
+    el.onclick = () => {
+      window.__qaQty = parseInt(el.dataset.qtyValue, 10);
+      render();
+    };
+  });
+
+  document.querySelectorAll("[data-qty-page]").forEach(el => {
+    el.onclick = () => {
+      window.__qaQtyPage = parseInt(el.dataset.qtyPage, 10);
+      render();
+    };
+  });
+
   const qaSubmit = document.getElementById("qa-submit");
   if (qaSubmit) qaSubmit.onclick = () => {
     const player = document.getElementById("qa-player").value;
     const actionIdx = parseInt(document.getElementById("qa-action").value, 10);
-    const qty = parseInt(document.getElementById("qa-qty").value, 10);
+    const qty = window.__qaQty || 1;
     window.__qaPlayer = player;
     window.__qaAction = actionIdx;
     const current = (grid[player] && grid[player][actionIdx]) || 0;
@@ -1784,11 +1833,12 @@ function attachEvents() {
     render();
   };
 
-  const cnTogglePlayers = document.getElementById("cn-toggle-players");
-  if (cnTogglePlayers) cnTogglePlayers.onclick = () => {
-    window.__showAllPlayers = !window.__showAllPlayers;
-    render();
-  };
+  document.querySelectorAll(".cn-toggle-players").forEach(el => {
+    el.onclick = () => {
+      window.__showAllPlayers = !window.__showAllPlayers;
+      render();
+    };
+  });
 
   document.querySelectorAll("[data-expand-player]").forEach(el => {
     el.onclick = () => {
@@ -1872,6 +1922,13 @@ if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("sw.js").catch(() => {});
   });
 }
+
+document.addEventListener("click", (e) => {
+  if (window.__avatarMenuOpen && !e.target.closest(".avatar-wrap")) {
+    window.__avatarMenuOpen = false;
+    render();
+  }
+});
 
 grid = initGrid();
 render();
