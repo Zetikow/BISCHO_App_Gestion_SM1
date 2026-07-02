@@ -324,7 +324,7 @@ const PLAYERS = ["Thomas L.","JM B.","Hugo R.","Yann N.","Arnaud H.","Victor S."
 const LOGO_DATA_URI = "icon-512.png";
 const SESSION_KEY = "caisse-noire-session"; // {nom, role}
 const APP_VERSION_KEY = "caisse-noire-app-version";
-const APP_VERSION = "2026-07-02-15"; // À incrémenter à chaque mise à jour déployée
+const APP_VERSION = "2026-07-02-16"; // À incrémenter à chaque mise à jour déployée
 const SEASON_START = new Date(2026, 8, 1);  // 1er septembre 2026
 const SEASON_END = new Date(2027, 5, 30);   // 30 juin 2027
 
@@ -936,8 +936,9 @@ function render() {
     </button>`
   ).join("");
   if (extraTabs.length > 0) {
+    const extraIcon = currentIsExtra ? (NAV_ICONS[currentPage] || NAV_ICONS.more) : NAV_ICONS.more;
     html += `<div class="bn-select-wrap ${currentIsExtra ? 'active' : ''}">
-      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">${NAV_ICONS[extraTabs[0].id] || ""}</svg>
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">${extraIcon}</svg>
       <div class="bn-select-label">${currentIsExtra ? tabs.find(t => t.id === currentPage).label : "Plus"}</div>
       <select id="nav-extra">
         <option value="">Plus</option>
@@ -981,6 +982,8 @@ const NAV_ICONS = {
   table: '<path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>',
   presence: '<path d="M9 11l3 3L22 4M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>',
   paiements: '<rect x="2" y="6" width="20" height="12" rx="2"/><path d="M2 10h20"/>',
+  stats: '<path d="M18 20V10M12 20V4M6 20v-6"/>',
+  more: '<path d="M12 5v14M5 12h14"/>',
 };
 
 function getTabsForRole(role) {
