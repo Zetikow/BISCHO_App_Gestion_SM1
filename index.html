@@ -348,7 +348,7 @@ const TEAMS = ["SM1", "U17", "SM2"];
 const LOGO_DATA_URI = "icon-512.png";
 const SESSION_KEY = "caisse-noire-session"; // {nom, role, code, equipe}
 const APP_VERSION_KEY = "caisse-noire-app-version";
-const APP_VERSION = "2026-07-03-04"; // À incrémenter à chaque mise à jour déployée
+const APP_VERSION = "2026-07-03-05"; // À incrémenter à chaque mise à jour déployée
 const SEASON_START = new Date(2026, 8, 1);  // 1er septembre 2026
 const SEASON_END = new Date(2027, 5, 30);   // 30 juin 2027
 
@@ -1071,6 +1071,7 @@ const NAV_ICONS = {
   paiements: '<rect x="2" y="6" width="20" height="12" rx="2"/><path d="M2 10h20"/>',
   stats: '<path d="M18 20V10M12 20V4M6 20v-6"/>',
   more: '<path d="M12 5v14M5 12h14"/>',
+  profil: '<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/>',
 };
 
 function getTabsForRole(role, equipe) {
@@ -1085,8 +1086,23 @@ function getTabsForRole(role, equipe) {
   if (isSM1 && (role === "Joueur" || role === "Coach" || role === "Admin")) {
     tabs.push({ id: "table", label: "Caisse", main: true });
   }
-  if (role === "Coach" || role === "Admin") tabs.push({ id: "presence", label: "Présence", main: false });
-  if (role === "Admin") tabs.push({ id: "paiements", label: "Paiements", main: false });
+
+  // Peu d'onglets principaux (ex: équipe sans caisse noire) -> Profil directement dans le bandeau.
+  if (tabs.filter(t => t.main).length <= 2) {
+    tabs.push({ id: "profil", label: "Profil", main: true });
+  }
+
+  const extra = [];
+  if (role === "Coach" || role === "Admin") extra.push({ id: "presence", label: "Présence", main: false });
+  if (role === "Admin") extra.push({ id: "paiements", label: "Paiements", main: false });
+
+  // Un seul élément dans "Plus" -> inutile de le cacher derrière un clic, on l'affiche directement.
+  if (extra.length === 1) {
+    tabs.push({ ...extra[0], main: true });
+  } else {
+    tabs.push(...extra);
+  }
+
   return tabs;
 }
 
@@ -1776,25 +1792,6 @@ function computePresenceByType(nom, equipe) {
   });
 }
 
-// Présence agrégée de toute l'équipe (utilisée en vue Coach, plutôt qu'une présence individuelle)
-function computeTeamPresenceByType(equipe) {
-  const roster = rosterForEquipe(equipe);
-  const evs = evenements.filter(ev => eventEquipe(ev) === equipe);
-  return ["Match", "Entraînement", "Repas"].map(t => {
-    const evsT = evs.filter(ev => (ev[3] || "") === t);
-    let oui = 0, total = 0;
-    evsT.forEach(ev => {
-      roster.forEach(p => {
-        const v = presenceEvenements[`${ev[0]}_${p}`];
-        if (v === "Oui" || v === "Non") {
-          total++;
-          if (v === "Oui") oui++;
-        }
-      });
-    });
-    return { type: t, pct: total > 0 ? Math.round((oui / total) * 100) : null, oui, total };
-  });
-}
 
 function renderPtypeCard(title, stats) {
   return `<div class="card">
@@ -1918,13 +1915,22 @@ function renderProfilPage() {
   if (canEditPoste) html += renderPosteCard(postes);
 
   if (vue === "coach") {
-    const coachRow = linkedRows.find(r => r[1] === "Coach");
-    const coachEquipe = coachRow ? (coachRow[3] || "SM1") : (session.equipe || "SM1");
-    html += renderPtypeCard(`Présence par type — équipe ${coachEquipe}`, computeTeamPresenceByType(coachEquipe));
-    html += renderAverageCard(coachEquipe, false);
-    html += renderAverageCard(coachEquipe, true);
+    const coachRows = linkedRows.filter(r => r[1] === "Coach");
+    const coachTeams = [...new Set(coachRows.map(r => r[3] || "SM1"))];
+    const defaultCoachTeam = coachTeams.includes(session.equipe) ? session.equipe : (coachTeams[0] || "SM1");
+    const chosenCoachTeam = (window.__profilCoachTeamView && coachTeams.includes(window.__profilCoachTeamView)) ? window.__profilCoachTeamView : defaultCoachTeam;
+    const coachRowForTeam = coachRows.find(r => (r[3] || "SM1") === chosenCoachTeam) || coachRows[0];
+    const coachNomForTeam = coachRowForTeam ? coachRowForTeam[0] : session.nom;
 
-    const mesJoueurs = comptes.slice(1).filter(c => c[1] === "Joueur" && (c[3] || "SM1") === coachEquipe);
+    if (coachTeams.length > 1) {
+      html += renderTeamSwitcher(coachTeams, chosenCoachTeam, "profil-coach-team");
+    }
+
+    html += renderPtypeCard("Ta présence par type", computePresenceByType(coachNomForTeam, chosenCoachTeam));
+    html += renderAverageCard(chosenCoachTeam, false);
+    html += renderAverageCard(chosenCoachTeam, true);
+
+    const mesJoueurs = comptes.slice(1).filter(c => c[1] === "Joueur" && (c[3] || "SM1") === chosenCoachTeam);
     const showAll = !!window.__profilJoueursExpanded;
     const visible = showAll ? mesJoueurs : mesJoueurs.slice(0, 4);
     html += `<div class="card">
@@ -2136,6 +2142,16 @@ function attachEvents() {
     el.onclick = () => {
       vibrate();
       window.__profilVue = el.dataset.profilVue;
+      render();
+    };
+  });
+
+  document.querySelectorAll("[data-profil-coach-team]").forEach(el => {
+    el.onclick = () => {
+      vibrate();
+      window.__profilCoachTeamView = el.dataset.profilCoachTeam;
+      window.__seasonAvgExpanded = false;
+      window.__monthAvgExpanded = false;
       render();
     };
   });
