@@ -280,6 +280,9 @@
   .pres-avatar { width: 32px; height: 32px; font-size: 11px; flex-shrink: 0; }
   .pres-card-name { flex: 1; min-width: 0; font-size: 13px; font-weight: 700; color: #e8e8ee; }
 
+  .team-switch-row { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
+  .team-switch-btn { flex: 1; min-width: 64px; padding: 9px 6px; border-radius: 10px; border: 1px solid #232a3f; background: #11141f; color: #7a8aad; font-size: 11.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.3px; cursor: pointer; font-family: 'Archivo', sans-serif; }
+  .team-switch-btn.active { background: var(--grad); color: #fff; border-color: transparent; }
   .profil-photo-zone { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 10px 0 4px; }
   .profil-photo-frame { width: 92px; height: 92px; border-radius: 22px; background: var(--grad); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 30px; overflow: hidden; border: 1px solid rgba(0,212,255,0.35); }
   .profil-photo-frame img { width: 100%; height: 100%; object-fit: cover; }
@@ -340,7 +343,7 @@ const TEAMS = ["SM1", "U17", "SM2"];
 const LOGO_DATA_URI = "icon-512.png";
 const SESSION_KEY = "caisse-noire-session"; // {nom, role, code, equipe}
 const APP_VERSION_KEY = "caisse-noire-app-version";
-const APP_VERSION = "2026-07-03-02"; // À incrémenter à chaque mise à jour déployée
+const APP_VERSION = "2026-07-03-03"; // À incrémenter à chaque mise à jour déployée
 const SEASON_START = new Date(2026, 8, 1);  // 1er septembre 2026
 const SEASON_END = new Date(2027, 5, 30);   // 30 juin 2027
 
@@ -428,7 +431,7 @@ function escapeHtml(str) {
 }
 
 function isFormOpen() {
-  return !!showAddEvent || !!window.__editingEvenementId || !!window.__editingPaiementId || !!window.__showAddPaiement || !!window.__showChangeCode;
+  return !!showAddEvent || !!window.__editingEvenementId || !!window.__editingPaiementId || !!window.__showAddPaiement || !!window.__showChangeCode || !!window.__showGenerateTrainings;
 }
 
 async function fetchAll() {
@@ -528,14 +531,22 @@ async function updateEvenementApi(id, date, heure, type, titre, lieu, equipe) {
   } catch (err) { isOnline = false; render(); }
 }
 
-async function generateSeasonTrainingsApi() {
-  const start = formatDateKey(SEASON_START);
+async function generateSeasonTrainingsApi(equipe, startMardi, heureMardi, lieuMardi, startJeudi, heureJeudi, lieuJeudi) {
   const end = formatDateKey(SEASON_END);
+  const params = new URLSearchParams({
+    action: "generateSeasonTrainings", equipe, end,
+    heureMardi: heureMardi || "20:00", heureJeudi: heureJeudi || "20:00",
+    lieuMardi: lieuMardi || "", lieuJeudi: lieuJeudi || "",
+    authNom: session.nom, authCode: session.code,
+  });
+  if (startMardi) params.set("startMardi", startMardi);
+  if (startJeudi) params.set("startJeudi", startJeudi);
   try {
-    const res = await fetch(`${GOOGLE_SCRIPT_URL}?action=generateSeasonTrainings&start=${start}&end=${end}&heureMardi=20:00&heureJeudi=20:15&lieu=${encodeURIComponent("Lustucru Arena")}&authNom=${encodeURIComponent(session.nom)}&authCode=${encodeURIComponent(session.code)}`);
+    const res = await fetch(`${GOOGLE_SCRIPT_URL}?${params.toString()}`);
     const data = await res.json();
+    window.__showGenerateTrainings = false;
     await fetchAll();
-    alert(data.ok ? `${data.created} entraînement(s) ajouté(s) à l'agenda.` : "Une erreur est survenue.");
+    alert(data.ok ? `${data.created} entraînement(s) ajouté(s) à l'agenda ${equipe}.` : "Une erreur est survenue.");
   } catch (err) { isOnline = false; render(); }
 }
 
@@ -849,6 +860,41 @@ function sortedVisibleEvenements() {
   return getVisibleEvenements().slice().sort((a, b) => eventDateObj(a) - eventDateObj(b));
 }
 
+// Équipes qu'un compte peut consulter : la sienne, celles de ses comptes liés (même "Personne"
+// dans Comptes — ex: un joueur SM1 qui est aussi coach U17), et toutes pour l'Admin.
+function myAllowedEquipes() {
+  if (session.role === "Admin") return TEAMS.slice();
+  const myRow = findCompteRow(session.nom);
+  const personne = myRow ? (myRow[4] || myRow[0]) : session.nom;
+  const linked = comptes.slice(1).filter(c => (c[4] || c[0]) === personne);
+  const set = new Set(linked.map(c => c[3] || "SM1"));
+  set.add(session.equipe || "SM1");
+  return TEAMS.filter(t => set.has(t));
+}
+
+function equipesForSwitcher() {
+  if (session.role === "Admin") return ["Toutes", ...TEAMS];
+  return myAllowedEquipes();
+}
+
+// Liste des joueurs d'une équipe donnée, à partir des comptes réels (plus de dépendance à PLAYERS).
+function rosterForEquipe(equipe) {
+  return comptes.slice(1).filter(c => c[1] === "Joueur" && (c[3] || "SM1") === equipe).map(c => c[0]);
+}
+
+function sortedEventsForTeamView(equipeView) {
+  let list = (equipeView === "Toutes") ? evenements : evenements.filter(ev => eventEquipe(ev) === equipeView);
+  if (session.role === "Bénévole") list = list.filter(ev => !isEntrainement(ev));
+  return list.slice().sort((a, b) => eventDateObj(a) - eventDateObj(b));
+}
+
+function renderTeamSwitcher(teams, active, dataAttr) {
+  if (teams.length <= 1) return "";
+  return `<div class="team-switch-row">
+    ${teams.map(t => `<button type="button" class="team-switch-btn ${t === active ? 'active' : ''}" data-${dataAttr}="${t}">${t}</button>`).join("")}
+  </div>`;
+}
+
 function nextEvenement() {
   const now = new Date();
   const in7Days = new Date(now);
@@ -1027,13 +1073,14 @@ function getTabsForRole(role, equipe) {
     { id: "home", label: "Accueil", main: true },
     { id: "agenda", label: "Agenda", main: true },
   ];
-  // Caisse noire, Présence et Paiements restent réservés à la SM1 pour le moment
-  // (l'Admin, dont l'équipe est "Toutes", garde accès à tout).
+  // Caisse noire et Paiements restent réservés à la SM1 pour le moment
+  // (l'Admin, dont l'équipe est "Toutes", garde accès à tout). Présence, elle,
+  // est désormais disponible pour toutes les équipes (roster tiré des comptes réels).
   const isSM1 = equipe === "SM1" || role === "Admin";
   if (isSM1 && (role === "Joueur" || role === "Coach" || role === "Admin")) {
     tabs.push({ id: "table", label: "Caisse", main: true });
   }
-  if (isSM1 && (role === "Coach" || role === "Admin")) tabs.push({ id: "presence", label: "Présence", main: false });
+  if (role === "Coach" || role === "Admin") tabs.push({ id: "presence", label: "Présence", main: false });
   if (role === "Admin") tabs.push({ id: "paiements", label: "Paiements", main: false });
   return tabs;
 }
@@ -1103,11 +1150,19 @@ function attachLoginEvents() {
   };
 }
 
-function computeSeasonAverages() {
-  const evenementsSM1 = evenements.filter(ev => eventEquipe(ev) === "SM1");
-  return PLAYERS.map(p => {
+function computeAverages(equipe, monthOnly) {
+  const roster = rosterForEquipe(equipe);
+  let evs = evenements.filter(ev => eventEquipe(ev) === equipe);
+  if (monthOnly) {
+    const now = new Date();
+    evs = evs.filter(ev => {
+      const d = eventDateObj(ev);
+      return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+    });
+  }
+  return roster.map(p => {
     let oui = 0, total = 0;
-    evenementsSM1.forEach(ev => {
+    evs.forEach(ev => {
       const v = presenceEvenements[`${ev[0]}_${p}`];
       if (v === "Oui" || v === "Non") {
         total++;
@@ -1118,13 +1173,19 @@ function computeSeasonAverages() {
   }).sort((a, b) => (b.pct ?? -1) - (a.pct ?? -1));
 }
 
-function renderSeasonAverageCard() {
-  const stats = computeSeasonAverages();
-  const expanded = !!window.__seasonAvgExpanded;
+function renderAverageCard(equipe, monthOnly) {
+  const stats = computeAverages(equipe, monthOnly);
+  const stateKey = monthOnly ? "__monthAvgExpanded" : "__seasonAvgExpanded";
+  const toggleAttr = monthOnly ? "data-toggle-month-avg" : "data-toggle-season-avg";
+  const expanded = !!window[stateKey];
   const visible = expanded ? stats : stats.slice(0, 5);
+  const monthLabel = new Date().toLocaleDateString("fr-FR", { month: "long" });
+  const title = monthOnly ? `Moyenne de présence - ${monthLabel}` : "Moyenne de présence - saison";
   let html = `<div class="card">
-    <div class="section-h" style="margin-bottom:8px;">Moyenne de présence - saison</div>`;
-  if (stats.every(s => s.pct === null)) {
+    <div class="section-h" style="margin-bottom:8px;">${title}</div>`;
+  if (stats.length === 0) {
+    html += `<div class="muted">Aucun joueur enregistré pour cette équipe.</div>`;
+  } else if (stats.every(s => s.pct === null)) {
     html += `<div class="muted">Pas encore de données de présence.</div>`;
   } else {
     visible.forEach(s => {
@@ -1133,7 +1194,7 @@ function renderSeasonAverageCard() {
       html += `<div class="presence-row"><div>${s.p}</div><div style="color:${color}; font-weight:700; font-size:12px;">${label}</div></div>`;
     });
     if (stats.length > 5) {
-      html += `<div class="expand-toggle" data-toggle-season-avg="1">${expanded ? "Réduire ▲" : `Voir les ${stats.length - 5} autres ▾`}</div>`;
+      html += `<div class="expand-toggle" ${toggleAttr}="1">${expanded ? "Réduire ▲" : `Voir les ${stats.length - 5} autres ▾`}</div>`;
     }
   }
   html += `</div>`;
@@ -1165,7 +1226,7 @@ function renderHome() {
     const total = playerTotal(session.nom);
     const rank = PLAYERS.map(p => ({ p, t: playerTotal(p) })).sort((a, b) => b.t - a.t);
     const myRank = rank.findIndex(r => r.p === session.nom) + 1;
-    const myStats = computeSeasonAverages().find(s => s.p === session.nom);
+    const myStats = computeAverages(session.equipe || "SM1", false).find(s => s.p === session.nom);
     const pctDisplay = myStats && myStats.pct !== null ? `${fmt(myStats.pct)}%` : "-";
     const pctSub = myStats && myStats.total > 0 ? `${myStats.oui}/${myStats.total}` : "Pas de donnée";
 
@@ -1267,15 +1328,45 @@ function renderNextEventCard() {
   </div></div>`;
 }
 
+function renderGenerateTrainingsForm(equipe) {
+  let defMardiDate = "", defMardiHeure = "20:00", defMardiLieu = "Lustucru Arena";
+  let defJeudiDate = "", defJeudiHeure = "20:00", defJeudiLieu = "Lustucru Arena";
+  if (equipe === "SM1") {
+    defMardiDate = formatDateKey(SEASON_START);
+    defJeudiDate = formatDateKey(SEASON_START);
+    defJeudiHeure = "20:15";
+  } else if (equipe === "U17") {
+    defMardiDate = "2026-09-01"; defMardiHeure = "18:30"; defMardiLieu = "Lustucru Arena";
+    defJeudiDate = "2026-09-03"; defJeudiHeure = "18:30"; defJeudiLieu = "Gymnase Rosheim";
+  }
+  return `<div class="add-form">
+    <div class="section-h">Mardi</div>
+    <label class="field-label">À partir du</label>
+    ${dateSelectHtml("gen-mardi-date", defMardiDate)}
+    <label class="field-label">Heure</label>
+    ${heureSelectHtml("gen-mardi-heure", defMardiHeure)}
+    <label class="field-label">Lieu</label>
+    <input id="gen-mardi-lieu" type="text" value="${defMardiLieu}" />
+    <div class="section-h" style="margin-top:10px;">Jeudi</div>
+    <label class="field-label">À partir du</label>
+    ${dateSelectHtml("gen-jeudi-date", defJeudiDate)}
+    <label class="field-label">Heure</label>
+    ${heureSelectHtml("gen-jeudi-heure", defJeudiHeure)}
+    <label class="field-label">Lieu</label>
+    <input id="gen-jeudi-lieu" type="text" value="${defJeudiLieu}" />
+    <button class="btn" id="submit-generate-trainings" style="margin-top:8px;" data-gen-equipe="${equipe}">Générer les entraînements ${equipe}</button>
+  </div>`;
+}
+
 function renderAgenda() {
   const canManage = session.role === "Coach" || session.role === "Admin";
-  const equipeLabel = session.role === "Admin" ? "toutes les équipes" : `l'équipe ${session.equipe || "SM1"}`;
+  const switcherTeams = equipesForSwitcher();
+  const defaultTeam = session.role === "Admin" ? "Toutes" : (session.equipe || "SM1");
+  const activeTeam = (window.__agendaTeamView && switcherTeams.includes(window.__agendaTeamView)) ? window.__agendaTeamView : defaultTeam;
+  const equipeLabel = activeTeam === "Toutes" ? "toutes les équipes" : `l'équipe ${activeTeam}`;
   let html = `<div class="page-title">Agenda</div><div class="page-sub">Matchs, entraînements et événements de ${equipeLabel}.</div>`;
 
   if (canManage) {
-    if (session.role === "Admin") {
-      html += `<button class="add-toggle" id="generate-trainings" style="border-style:solid; color:#7a8aad;">📅 Générer les entraînements de la saison (mar/jeu)</button>`;
-    }
     html += `<button class="btn add-btn-primary" id="toggle-add-event">${showAddEvent ? "− Fermer" : "+ Ajouter un événement"}</button>`;
     if (showAddEvent) {
       html += `<div class="add-form">
@@ -1297,14 +1388,21 @@ function renderAgenda() {
         <input id="ev-lieu" type="text" value="Lustucru Arena" />
         ${session.role === "Admin" ? `<label class="field-label">Équipe</label>
         <select id="ev-equipe">
-          ${TEAMS.map(t => `<option value="${t}">${t}</option>`).join("")}
+          ${TEAMS.map(t => `<option value="${t}" ${activeTeam === t ? "selected" : ""}>${t}</option>`).join("")}
         </select>` : ""}
         <button class="btn" id="submit-add-event" style="margin-top:4px;">Enregistrer l'événement</button>
       </div>`;
     }
   }
 
-  const sorted = sortedVisibleEvenements();
+  html += renderTeamSwitcher(switcherTeams, activeTeam, "agenda-team");
+
+  if (session.role === "Admin" && activeTeam !== "Toutes") {
+    html += `<button class="add-toggle" id="toggle-generate-trainings" style="border-style:solid; color:#7a8aad;">📅 ${window.__showGenerateTrainings ? "− Fermer" : "Générer les entraînements (mar/jeu)"}</button>`;
+    if (window.__showGenerateTrainings) html += renderGenerateTrainingsForm(activeTeam);
+  }
+
+  const sorted = sortedEventsForTeamView(activeTeam);
   const now = new Date();
   const upcoming = sorted.filter(ev => eventDateObj(ev) >= now);
   const past = sorted.filter(ev => eventDateObj(ev) < now).reverse();
@@ -1563,15 +1661,19 @@ function renderDetailTable() {
 }
 
 function renderPresencePage() {
-  // La présence (basée sur le roster PLAYERS) reste SM1 uniquement pour le moment,
-  // même pour l'Admin qui voit toutes les équipes dans l'Agenda.
-  const sorted = sortedEvenements().filter(ev => eventEquipe(ev) === "SM1");
+  const switcherTeams = equipesForSwitcher().filter(t => t !== "Toutes"); // pas de vue "toutes" pour la présence (roster par équipe)
+  const defaultTeam = switcherTeams.includes(session.equipe) ? session.equipe : (switcherTeams[0] || "SM1");
+  const activeTeam = (window.__presenceTeamView && switcherTeams.includes(window.__presenceTeamView)) ? window.__presenceTeamView : defaultTeam;
+
+  const sorted = sortedEvenements().filter(ev => eventEquipe(ev) === activeTeam);
   const now = new Date();
   const upcoming = sorted.filter(ev => eventDateObj(ev) >= now);
   const past = sorted.filter(ev => eventDateObj(ev) < now).reverse();
 
   let html = `<div class="page-title">Présence</div><div class="page-sub">Suivi des présences de l'équipe.</div>`;
-  html += renderSeasonAverageCard();
+  html += renderTeamSwitcher(switcherTeams, activeTeam, "presence-team");
+  html += renderAverageCard(activeTeam, false);
+  html += renderAverageCard(activeTeam, true);
 
   if (upcoming.length === 0) {
     html += `<div class="section-h">À venir</div><div class="card muted">Aucun événement à venir.</div>`;
@@ -1583,23 +1685,23 @@ function renderPresencePage() {
         html += `<div class="section-h">${label}</div>`;
         lastLabel = label;
       }
-      html += renderPresenceEventCard(ev, false);
+      html += renderPresenceEventCard(ev, false, activeTeam);
     });
   }
 
   if (past.length > 0) {
     html += `<div class="section-h">Passés</div>`;
-    past.slice(0, 12).forEach(ev => { html += renderPresenceEventCard(ev, true); });
+    past.slice(0, 12).forEach(ev => { html += renderPresenceEventCard(ev, true, activeTeam); });
   }
 
   return html;
 }
 
-function renderPresenceEventCard(ev, isPast) {
+function renderPresenceEventCard(ev, isPast, activeTeam) {
   const [id, date, heure, type, titre, lieu] = ev;
   const d = eventDateObj(ev);
   const expanded = window.__expandedEventId === id;
-  const roster = PLAYERS.map(p => ({ p, val: presenceEvenements[`${id}_${p}`] }));
+  const roster = rosterForEquipe(activeTeam || "SM1").map(p => ({ p, val: presenceEvenements[`${id}_${p}`] }));
   const presentCount = roster.filter(r => r.val === "Oui").length;
   const absentCount = roster.filter(r => r.val === "Non").length;
   const pendingCount = roster.length - presentCount - absentCount;
@@ -1678,7 +1780,7 @@ function renderProfilPage() {
   const poste = myRow ? (myRow[5] || "") : "";
   const nomComplet = myRow ? (myRow[6] || "") : "";
   const photoUrl = myRow ? (myRow[7] || "") : "";
-  const canEditPoste = session.role === "Joueur" || session.role === "Coach";
+  const canEditPoste = session.role === "Joueur" || session.role === "Coach" || session.role === "Admin";
   const isCoach = session.role === "Coach";
 
   let html = `<div class="page-title">Mon profil joueur</div>`;
@@ -1827,7 +1929,7 @@ function vibrate() {
 
 // Retour visuel immédiat au toucher, indépendant du rafraîchissement de la page
 // (le CSS :active seul n'a pas toujours le temps de s'afficher avant le re-rendu)
-const TAP_SELECTOR = ".btn, .nav-btn, .toggle-btn, .ev-edit, .ev-del, .bottom-nav button, .expand-toggle, .avatar-btn, .avatar-menu-item, .qty-btn, .add-toggle, .justif-edit-btn";
+const TAP_SELECTOR = ".btn, .nav-btn, .toggle-btn, .ev-edit, .ev-del, .bottom-nav button, .expand-toggle, .avatar-btn, .avatar-menu-item, .qty-btn, .add-toggle, .justif-edit-btn, .team-switch-btn";
 document.addEventListener("touchstart", (e) => {
   const el = e.target.closest(TAP_SELECTOR);
   if (el) el.classList.add("tap-active");
@@ -1895,10 +1997,33 @@ function attachEvents() {
   const toggleAddEvent = document.getElementById("toggle-add-event");
   if (toggleAddEvent) toggleAddEvent.onclick = () => { showAddEvent = !showAddEvent; render(); };
 
-  const generateTrainings = document.getElementById("generate-trainings");
-  if (generateTrainings) generateTrainings.onclick = () => {
-    if (confirm("Générer tous les entraînements du mardi et jeudi pour toute la saison ? Les entraînements déjà existants ne seront pas dupliqués.")) {
-      generateSeasonTrainingsApi();
+  document.querySelectorAll("[data-agenda-team]").forEach(el => {
+    el.onclick = () => {
+      vibrate();
+      window.__agendaTeamView = el.dataset.agendaTeam;
+      window.__showGenerateTrainings = false;
+      render();
+    };
+  });
+
+  const toggleGenerateTrainings = document.getElementById("toggle-generate-trainings");
+  if (toggleGenerateTrainings) toggleGenerateTrainings.onclick = () => {
+    window.__showGenerateTrainings = !window.__showGenerateTrainings;
+    render();
+  };
+
+  const submitGenerateTrainings = document.getElementById("submit-generate-trainings");
+  if (submitGenerateTrainings) submitGenerateTrainings.onclick = (e) => {
+    const equipe = e.currentTarget.dataset.genEquipe;
+    const startMardi = readDateSelect("gen-mardi-date");
+    const heureMardi = readHeureSelect("gen-mardi-heure");
+    const lieuMardi = document.getElementById("gen-mardi-lieu").value;
+    const startJeudi = readDateSelect("gen-jeudi-date");
+    const heureJeudi = readHeureSelect("gen-jeudi-heure");
+    const lieuJeudi = document.getElementById("gen-jeudi-lieu").value;
+    if (!startMardi && !startJeudi) { alert("Renseigne au moins une date de départ (mardi ou jeudi)."); return; }
+    if (confirm(`Générer les entraînements ${equipe} pour toute la saison ? Les entraînements déjà existants pour cette équipe ne seront pas dupliqués.`)) {
+      generateSeasonTrainingsApi(equipe, startMardi, heureMardi, lieuMardi, startJeudi, heureJeudi, lieuJeudi);
     }
   };
 
@@ -1931,6 +2056,22 @@ function attachEvents() {
     window.__seasonAvgExpanded = !window.__seasonAvgExpanded;
     render();
   };
+
+  const toggleMonthAvg = document.querySelector("[data-toggle-month-avg]");
+  if (toggleMonthAvg) toggleMonthAvg.onclick = () => {
+    window.__monthAvgExpanded = !window.__monthAvgExpanded;
+    render();
+  };
+
+  document.querySelectorAll("[data-presence-team]").forEach(el => {
+    el.onclick = () => {
+      vibrate();
+      window.__presenceTeamView = el.dataset.presenceTeam;
+      window.__seasonAvgExpanded = false;
+      window.__monthAvgExpanded = false;
+      render();
+    };
+  });
 
   const toggleRestePayer = document.querySelector("[data-toggle-reste-payer]");
   if (toggleRestePayer) toggleRestePayer.onclick = () => {
