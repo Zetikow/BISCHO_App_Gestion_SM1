@@ -286,6 +286,7 @@
   .team-switch-row { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
   .team-switch-btn { flex: 1; min-width: 64px; padding: 9px 6px; border-radius: 10px; border: 1px solid #232a3f; background: #11141f; color: #7a8aad; font-size: 11.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.3px; cursor: pointer; font-family: 'Archivo', sans-serif; }
   .team-switch-btn.active { background: var(--grad); color: #fff; border-color: transparent; }
+  .actu-filter-btn { line-height: 1.5; padding: 8px 6px; font-size: 10.5px; }
   .profil-photo-zone { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 10px 0 4px; }
   .profil-photo-frame { width: 92px; height: 92px; border-radius: 22px; background: var(--grad); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 900; font-size: 30px; overflow: hidden; border: 1px solid rgba(0,212,255,0.35); }
   .profil-photo-frame img { width: 100%; height: 100%; object-fit: cover; }
@@ -351,7 +352,7 @@ const TEAMS = ["SM1", "U17", "SM2"];
 const LOGO_DATA_URI = "icon-512.png";
 const SESSION_KEY = "caisse-noire-session"; // {nom, role, code, equipe}
 const APP_VERSION_KEY = "caisse-noire-app-version";
-const APP_VERSION = "2026-07-03-08"; // À incrémenter à chaque mise à jour déployée
+const APP_VERSION = "2026-07-03-09"; // À incrémenter à chaque mise à jour déployée
 const SEASON_START = new Date(2026, 8, 1);  // 1er septembre 2026
 const SEASON_END = new Date(2027, 5, 30);   // 30 juin 2027
 
@@ -2005,8 +2006,8 @@ function scopesForActuCreation() {
 }
 
 function actuFilterOptions() {
-  if (session.role === "Admin") return ["Toutes", "Générale", ...TEAMS];
-  return ["Toutes", "Générale", session.equipe || "SM1"];
+  if (session.role === "Admin") return ["Générale", ...TEAMS];
+  return ["Générale", session.equipe || "SM1"];
 }
 
 function renderActualitesPage() {
@@ -2032,11 +2033,12 @@ function renderActualitesPage() {
   }
 
   const filterOptions = actuFilterOptions();
-  const activeFilter = (window.__actuFilter && filterOptions.includes(window.__actuFilter)) ? window.__actuFilter : "Toutes";
-  html += renderTeamSwitcher(filterOptions, activeFilter, "actu-filter");
+  const activeFilter = (window.__actuFilter && filterOptions.includes(window.__actuFilter)) ? window.__actuFilter : filterOptions[0];
+  html += `<div class="team-switch-row">
+    ${filterOptions.map(t => `<button type="button" class="team-switch-btn actu-filter-btn ${t === activeFilter ? 'active' : ''}" data-actu-filter="${t}">Actualité<br>${t}</button>`).join("")}
+  </div>`;
 
-  let list = visibleActualites();
-  if (activeFilter !== "Toutes") list = list.filter(a => a[2] === activeFilter);
+  let list = visibleActualites().filter(a => a[2] === activeFilter);
 
   if (list.length === 0) {
     html += `<div class="card muted">Aucune actualité pour le moment.</div>`;
