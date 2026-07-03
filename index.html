@@ -351,7 +351,7 @@ const TEAMS = ["SM1", "U17", "SM2"];
 const LOGO_DATA_URI = "icon-512.png";
 const SESSION_KEY = "caisse-noire-session"; // {nom, role, code, equipe}
 const APP_VERSION_KEY = "caisse-noire-app-version";
-const APP_VERSION = "2026-07-03-07"; // À incrémenter à chaque mise à jour déployée
+const APP_VERSION = "2026-07-03-08"; // À incrémenter à chaque mise à jour déployée
 const SEASON_START = new Date(2026, 8, 1);  // 1er septembre 2026
 const SEASON_END = new Date(2027, 5, 30);   // 30 juin 2027
 
@@ -2004,6 +2004,11 @@ function scopesForActuCreation() {
   return [];
 }
 
+function actuFilterOptions() {
+  if (session.role === "Admin") return ["Toutes", "Générale", ...TEAMS];
+  return ["Toutes", "Générale", session.equipe || "SM1"];
+}
+
 function renderActualitesPage() {
   const canCreate = session.role === "Coach" || session.role === "Admin";
   const creatableScopes = scopesForActuCreation();
@@ -2026,7 +2031,13 @@ function renderActualitesPage() {
     }
   }
 
-  const list = visibleActualites();
+  const filterOptions = actuFilterOptions();
+  const activeFilter = (window.__actuFilter && filterOptions.includes(window.__actuFilter)) ? window.__actuFilter : "Toutes";
+  html += renderTeamSwitcher(filterOptions, activeFilter, "actu-filter");
+
+  let list = visibleActualites();
+  if (activeFilter !== "Toutes") list = list.filter(a => a[2] === activeFilter);
+
   if (list.length === 0) {
     html += `<div class="card muted">Aucune actualité pour le moment.</div>`;
   } else {
@@ -2260,6 +2271,14 @@ function attachEvents() {
 
   const toggleAddActualite = document.getElementById("toggle-add-actualite");
   if (toggleAddActualite) toggleAddActualite.onclick = () => { window.__showAddActualite = !window.__showAddActualite; render(); };
+
+  document.querySelectorAll("[data-actu-filter]").forEach(el => {
+    el.onclick = () => {
+      vibrate();
+      window.__actuFilter = el.dataset.actuFilter;
+      render();
+    };
+  });
 
   const submitAddActualite = document.getElementById("submit-add-actualite");
   if (submitAddActualite) submitAddActualite.onclick = () => {
