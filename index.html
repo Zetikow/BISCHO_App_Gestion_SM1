@@ -447,11 +447,25 @@ function myScorencoTeams() {
   return [...teams];
 }
 
+// Retrouve l'identité "Joueur" liée (même "Personne") à ce compte, quelle que soit la ligne
+// utilisée pour se connecter. Indispensable pour un compte Admin/Coach qui est aussi joueur
+// d'une autre équipe : sans ça, sa présence perso se calculait sur l'équipe de la session en
+// cours (ex: U17 pour un Admin/Coach U17) au lieu de sa vraie équipe de joueur (ex: SM1).
+function myJoueurIdentity() {
+  const myRow = findCompteRow(session.nom);
+  const personne = myRow ? (myRow[4] || myRow[0]) : session.nom;
+  const linked = comptes.slice(1).filter(c => (c[4] || c[0]) === personne);
+  const joueurRow = linked.find(r => r[1] === "Joueur");
+  if (joueurRow) return { nom: joueurRow[0], equipe: joueurRow[3] || "SM1" };
+  if (session.role === "Joueur") return { nom: session.nom, equipe: session.equipe || "SM1" };
+  return null;
+}
+
 const LOGO_DATA_URI = "icon-512.png";
 const SESSION_KEY = "caisse-noire-session"; // {nom, role, code, equipe}
 const APP_VERSION_KEY = "caisse-noire-app-version";
 const LAST_USER_KEY = "lustuzone-last-user"; // simple mémorisation du dernier nom connecté sur cet appareil (pas le code)
-const APP_VERSION = "2026-07-05-10"; // À incrémenter à chaque mise à jour déployée
+const APP_VERSION = "2026-07-05-11"; // À incrémenter à chaque mise à jour déployée
 const SEASON_START = new Date(2026, 8, 1);  // 1er septembre 2026
 const SEASON_END = new Date(2027, 5, 30);   // 30 juin 2027
 
@@ -1498,9 +1512,7 @@ function renderHome() {
     html += `<div class="page-title">Salut ${session.nom}</div><div class="page-sub">Aucun événement prévu pour le moment.</div>`;
   }
 
-  if (session.role !== "Admin") {
-    myScorencoTeams().forEach(t => { html += renderScorencoWidget(t); });
-  }
+  myScorencoTeams().forEach(t => { html += renderScorencoWidget(t); });
 
   html += renderNextEventCard();
 
@@ -1508,12 +1520,13 @@ function renderHome() {
   // (tirée du roster réel de l'équipe, pas de la liste PLAYERS figée — sinon un joueur peut
   // avoir sa présence correcte sur la page Présence mais rien sur l'Accueil).
   const inCaisseNoire = PLAYERS.map(p => p.trim()).includes((session.nom || "").trim()) && (session.equipe === "SM1" || session.role === "Admin");
-  const inPresenceRoster = rosterForEquipe(session.equipe || "SM1").includes(session.nom) || session.role === "Coach";
+  const joueurIdentity = myJoueurIdentity();
+  const inPresenceRoster = !!joueurIdentity && rosterForEquipe(joueurIdentity.equipe).includes(joueurIdentity.nom);
   if (inCaisseNoire || inPresenceRoster) {
     const total = inCaisseNoire ? playerTotal(session.nom) : 0;
     const rank = PLAYERS.map(p => ({ p, t: playerTotal(p) })).sort((a, b) => b.t - a.t);
     const myRank = rank.findIndex(r => r.p === session.nom) + 1;
-    const myStats = inPresenceRoster ? computeAverages(session.equipe || "SM1", false).find(s => s.p === session.nom) : null;
+    const myStats = inPresenceRoster ? computeAverages(joueurIdentity.equipe, false).find(s => s.p === joueurIdentity.nom) : null;
     const pctDisplay = myStats && myStats.pct !== null ? `${fmt(myStats.pct)}%` : "-";
     const pctSub = myStats && myStats.total > 0 ? `${myStats.oui}/${myStats.total}` : "Pas de donnée";
 
