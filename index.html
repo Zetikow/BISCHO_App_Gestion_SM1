@@ -404,7 +404,7 @@ const TEAMS = ["SM1", "U17", "SM2"];
 const LOGO_DATA_URI = "icon-512.png";
 const SESSION_KEY = "caisse-noire-session"; // {nom, role, code, equipe}
 const APP_VERSION_KEY = "caisse-noire-app-version";
-const APP_VERSION = "2026-07-05-02"; // À incrémenter à chaque mise à jour déployée
+const APP_VERSION = "2026-07-05-03"; // À incrémenter à chaque mise à jour déployée
 const SEASON_START = new Date(2026, 8, 1);  // 1er septembre 2026
 const SEASON_END = new Date(2027, 5, 30);   // 30 juin 2027
 
@@ -417,6 +417,7 @@ let presenceEvenements = {}; // { eventId_nom: "Oui"/"Non" }
 let presenceJustifications = {}; // { eventId_nom: "texte du motif" }
 let actualites = []; // [[id, titre, scope, texte, auteur, date], ...] (+ header row)
 let salariesState = { loading: false, loaded: false, error: null, currentFolder: null, folders: [], files: [], breadcrumb: [] };
+let salariesCache = {}; // folderId -> {folders, files, currentFolder} — permet un affichage instantané en revenant sur un dossier déjà visité
 
 let session = JSON.parse(localStorage.getItem(SESSION_KEY) || "null");
 if (session && !session.code) { session = null; localStorage.removeItem(SESSION_KEY); }
@@ -610,28 +611,50 @@ async function deleteActualiteApi(id) {
   } catch (err) { isOnline = false; render(); }
 }
 
-async function fetchSalariesFolder(folderId) {
-  salariesState.loading = true;
-  salariesState.error = null;
-  render();
+async function fetchSalariesFolder(folderId, newBreadcrumb) {
+  const cacheKey = folderId || "__root__";
+  const cached = salariesCache[cacheKey];
+
+  if (cached) {
+    // Affichage instantané depuis le cache pendant qu'on rafraîchit en arrière-plan
+    const bc = newBreadcrumb || (salariesState.breadcrumb.length ? salariesState.breadcrumb : [{ id: cached.currentFolder.id, name: "Racine" }]);
+    salariesState = { loading: false, loaded: true, error: null, currentFolder: cached.currentFolder, folders: cached.folders, files: cached.files, breadcrumb: bc };
+    render();
+  } else {
+    salariesState.loading = true;
+    salariesState.error = null;
+    if (newBreadcrumb) salariesState.breadcrumb = newBreadcrumb;
+    render();
+  }
+
   try {
     const params = new URLSearchParams({ action: "salariesList", authNom: session.nom, authCode: session.code });
     if (folderId) params.set("folderId", folderId);
     const res = await fetch(`${GOOGLE_SCRIPT_URL}?${params.toString()}`);
     const data = await res.json();
     if (data.ok) {
-      salariesState = { loading: false, loaded: true, error: null, currentFolder: data.currentFolder, folders: data.folders, files: data.files, breadcrumb: data.breadcrumb };
-    } else {
+      salariesCache[cacheKey] = { folders: data.folders, files: data.files, currentFolder: data.currentFolder };
+      let bc = newBreadcrumb || salariesState.breadcrumb;
+      if (!bc || bc.length === 0) bc = [{ id: data.currentFolder.id, name: "Racine" }];
+      else if (bc[0].id === null) bc[0].id = data.currentFolder.id;
+      salariesState = { loading: false, loaded: true, error: null, currentFolder: data.currentFolder, folders: data.folders, files: data.files, breadcrumb: bc };
+      isOnline = true;
+    } else if (!cached) {
       salariesState.loading = false;
       salariesState.error = "Impossible d'ouvrir ce dossier.";
     }
-    isOnline = true;
   } catch (err) {
     isOnline = false;
-    salariesState.loading = false;
-    salariesState.error = "Connexion impossible.";
+    if (!cached) {
+      salariesState.loading = false;
+      salariesState.error = "Connexion impossible.";
+    }
   }
   render();
+}
+
+function invalidateSalariesCache(folderId) {
+  delete salariesCache[folderId || "__root__"];
 }
 
 async function salariesCreateFolderApi(parentId, name) {
@@ -639,6 +662,7 @@ async function salariesCreateFolderApi(parentId, name) {
     const params = new URLSearchParams({ action: "salariesCreateFolder", parentId: parentId || "", name, authNom: session.nom, authCode: session.code });
     await fetch(`${GOOGLE_SCRIPT_URL}?${params.toString()}`);
     window.__showSalariesAddFolder = false;
+    invalidateSalariesCache(parentId);
     await fetchSalariesFolder(parentId);
   } catch (err) { isOnline = false; render(); }
 }
@@ -648,6 +672,7 @@ async function salariesAddLinkApi(parentId, titre, url) {
     const params = new URLSearchParams({ action: "salariesAddLink", parentId: parentId || "", titre, url, authNom: session.nom, authCode: session.code });
     await fetch(`${GOOGLE_SCRIPT_URL}?${params.toString()}`);
     window.__showSalariesAdd = false;
+    invalidateSalariesCache(parentId);
     await fetchSalariesFolder(parentId);
   } catch (err) { isOnline = false; render(); }
 }
@@ -658,6 +683,7 @@ async function salariesUploadFileApi(parentId, filename, mimeType, base64) {
     await fetch(GOOGLE_SCRIPT_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body });
     window.__showSalariesAdd = false;
     window.__salariesUploading = false;
+    invalidateSalariesCache(parentId);
     await fetchSalariesFolder(parentId);
   } catch (err) {
     isOnline = false;
@@ -670,6 +696,7 @@ async function salariesDeleteApi(id, type, parentId) {
   try {
     const params = new URLSearchParams({ action: "salariesDelete", id, type, authNom: session.nom, authCode: session.code });
     await fetch(`${GOOGLE_SCRIPT_URL}?${params.toString()}`);
+    invalidateSalariesCache(parentId);
     await fetchSalariesFolder(parentId);
   } catch (err) { isOnline = false; render(); }
 }
@@ -2314,7 +2341,7 @@ function renderSalariesPage() {
     html += `<div class="section-h">Dossiers</div><div class="folder-grid">`;
     salariesState.folders.forEach(f => {
       html += `<div class="folder-card">
-        <div data-salaries-open-folder="${f.id}" style="display:flex; flex-direction:column; gap:8px;">
+        <div data-salaries-open-folder="${f.id}" data-salaries-open-folder-name="${escapeHtml(f.name)}" style="display:flex; flex-direction:column; gap:8px;">
           <div class="folder-icon"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">${NAV_ICONS.salaries}</svg></div>
           <div class="folder-name">${escapeHtml(f.name)}</div>
         </div>
@@ -2341,7 +2368,7 @@ function renderSalariesPage() {
           data-salaries-file-linkurl="${f.linkUrl ? escapeHtml(f.linkUrl) : ''}"
           data-salaries-file-name="${escapeHtml(f.name)}">
           <div class="file-title">${escapeHtml(f.name)}</div>
-          <div class="file-meta">${f.owner ? escapeHtml(f.owner) + " · " : ""}${f.date || ""}${f.sizeLabel ? " · " + f.sizeLabel : ""}</div>
+          <div class="file-meta">${f.date || ""}${f.sizeLabel ? " · " + f.sizeLabel : ""}</div>
         </div>
         ${badge}
         ${canManage ? iconBtn(ICON_CROSS, "ev-del", `data-salaries-delete="${f.id}" data-salaries-delete-type="file"`) : ""}
@@ -2651,11 +2678,25 @@ function attachEvents() {
   };
 
   document.querySelectorAll("[data-salaries-goto]").forEach(el => {
-    el.onclick = () => { vibrate(); window.__showSalariesAdd = false; fetchSalariesFolder(el.dataset.salariesGoto); };
+    el.onclick = () => {
+      vibrate();
+      window.__showSalariesAdd = false;
+      const targetId = el.dataset.salariesGoto;
+      const idx = salariesState.breadcrumb.findIndex(b => b.id === targetId);
+      const newBc = idx >= 0 ? salariesState.breadcrumb.slice(0, idx + 1) : salariesState.breadcrumb;
+      fetchSalariesFolder(targetId, newBc);
+    };
   });
 
   document.querySelectorAll("[data-salaries-open-folder]").forEach(el => {
-    el.onclick = () => { vibrate(); window.__showSalariesAdd = false; fetchSalariesFolder(el.dataset.salariesOpenFolder); };
+    el.onclick = () => {
+      vibrate();
+      window.__showSalariesAdd = false;
+      const id = el.dataset.salariesOpenFolder;
+      const name = el.dataset.salariesOpenFolderName;
+      const newBc = [...salariesState.breadcrumb, { id, name }];
+      fetchSalariesFolder(id, newBc);
+    };
   });
 
   document.querySelectorAll("[data-salaries-delete]").forEach(el => {
@@ -2689,7 +2730,9 @@ function attachEvents() {
   const salariesRefresh = document.getElementById("salaries-refresh");
   if (salariesRefresh) salariesRefresh.onclick = () => {
     vibrate();
-    fetchSalariesFolder(salariesState.currentFolder ? salariesState.currentFolder.id : null);
+    const fid = salariesState.currentFolder ? salariesState.currentFolder.id : null;
+    invalidateSalariesCache(fid);
+    fetchSalariesFolder(fid);
   };
 
   document.querySelectorAll("[data-delete-actualite]").forEach(el => {
