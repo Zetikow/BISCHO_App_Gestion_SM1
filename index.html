@@ -409,7 +409,7 @@ const TEAMS = ["SM1", "U17", "SM2"];
 // une par équipe. Laisse vide "" tant que le widget n'est pas encore créé : la carte ne
 // s'affiche simplement pas pour cette équipe-là.
 const SCORENCO_WIDGETS = {
-  SM1: "",
+  SM1: "https://widgets.scorenco.com/team/192700",
   U17: "",
   SM2: "",
 };
@@ -419,7 +419,7 @@ function renderScorencoWidget(equipe) {
   if (url) {
     return `<div class="card scorenco-widget">
       <div class="section-h" style="margin-bottom:8px;">Calendrier officiel FFHB — ${equipe}</div>
-      <iframe src="${escapeHtml(url)}" style="width:100%; border:none; height:260px; border-radius:10px; display:block;" loading="lazy"></iframe>
+      <iframe src="${escapeHtml(url)}" style="width:100%; border:0; border-width:0; border-radius:10px; display:block;" height="500" width="100%" frameborder="0" referrerpolicy="unsafe-url" loading="lazy"></iframe>
     </div>`;
   }
   // Pas encore configuré : rappel visible pour l'Admin uniquement (pas de TODO technique
@@ -465,7 +465,7 @@ const LOGO_DATA_URI = "icon-512.png";
 const SESSION_KEY = "caisse-noire-session"; // {nom, role, code, equipe}
 const APP_VERSION_KEY = "caisse-noire-app-version";
 const LAST_USER_KEY = "lustuzone-last-user"; // simple mémorisation du dernier nom connecté sur cet appareil (pas le code)
-const APP_VERSION = "2026-07-05-11"; // À incrémenter à chaque mise à jour déployée
+const APP_VERSION = "2026-07-05-12"; // À incrémenter à chaque mise à jour déployée
 const SEASON_START = new Date(2026, 8, 1);  // 1er septembre 2026
 const SEASON_END = new Date(2027, 5, 30);   // 30 juin 2027
 
