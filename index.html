@@ -407,7 +407,7 @@ const LOGO_DATA_URI = "icon-512.png";
 const SESSION_KEY = "caisse-noire-session"; // {nom, role, code, equipe}
 const APP_VERSION_KEY = "caisse-noire-app-version";
 const LAST_USER_KEY = "lustuzone-last-user"; // simple mémorisation du dernier nom connecté sur cet appareil (pas le code)
-const APP_VERSION = "2026-07-05-05"; // À incrémenter à chaque mise à jour déployée
+const APP_VERSION = "2026-07-05-07"; // À incrémenter à chaque mise à jour déployée
 const SEASON_START = new Date(2026, 8, 1);  // 1er septembre 2026
 const SEASON_END = new Date(2027, 5, 30);   // 30 juin 2027
 
@@ -438,7 +438,6 @@ let loginError = "";
 let loginNeedsSetup = null; // null = pas encore vérifié, true/false ensuite
 let loginSelectedNom = localStorage.getItem(LAST_USER_KEY) || "";
 let loginPrefilledFromMemory = !!loginSelectedNom;
-let loginSearchQuery = "";
 let loginNoms = null; // [{nom, role}, ...] chargé avant connexion, remplace la liste figée PLAYERS pour le menu
 let showAddEvent = false;
 
@@ -1330,17 +1329,11 @@ function renderLogin() {
     <div class="login-title">LustuZone</div>
     <div class="login-subtitle">App de Gestion</div>
     <label class="field-label">Ton nom</label>
-    <input id="login-search" type="text" placeholder="Rechercher un nom..." value="${escapeHtml(loginSearchQuery)}" style="margin-bottom:8px;" />
-    <select id="login-nom">
-      <option value="">-- Choisir --</option>
-      ${(() => {
-        const allNoms = loginNoms ? loginNoms.map(c => c.nom) : [...PLAYERS, "Coach", "Admin", "Bénévole"];
-        const q = loginSearchQuery.trim().toLowerCase();
-        const filtered = q ? allNoms.filter(n => n.toLowerCase().includes(q)) : allNoms;
-        if (filtered.length === 0) return `<option value="" disabled>Aucun résultat</option>`;
-        return filtered.map(n => `<option value="${n}" ${n === loginSelectedNom ? "selected" : ""}>${n}</option>`).join("");
-      })()}
-    </select>
+    <input id="login-nom" list="login-noms-list" type="text" autocomplete="off"
+      placeholder="Tape ou choisis ton nom" value="${escapeHtml(loginSelectedNom)}" />
+    <datalist id="login-noms-list">
+      ${(loginNoms ? loginNoms.map(c => c.nom) : [...PLAYERS, "Coach", "Admin", "Bénévole"]).map(n => `<option value="${escapeHtml(n)}"></option>`).join("")}
+    </datalist>
     ${formHtml}
     ${loginPrefilledFromMemory && loginSelectedNom ? `<div class="muted" id="login-change-account" style="margin-top:12px; cursor:pointer; text-decoration:underline;">Ce n'est pas moi — changer de compte</div>` : ""}
     ${loginError ? `<div class="login-error">${loginError}</div>` : ""}
@@ -1348,20 +1341,21 @@ function renderLogin() {
 }
 
 function attachLoginEvents() {
-  const searchInput = document.getElementById("login-search");
-  if (searchInput) searchInput.oninput = (e) => {
-    loginSearchQuery = e.target.value;
-    render();
-  };
-
-  const nomSelect = document.getElementById("login-nom");
-  if (nomSelect) nomSelect.onchange = (e) => {
-    loginSelectedNom = e.target.value;
+  const nomInput = document.getElementById("login-nom");
+  if (nomInput) nomInput.oninput = (e) => {
+    const val = e.target.value;
+    loginSelectedNom = val;
     loginPrefilledFromMemory = false;
-    loginNeedsSetup = null;
     loginError = "";
-    render();
-    if (loginSelectedNom) checkAccountStatus(loginSelectedNom);
+    const allNoms = loginNoms ? loginNoms.map(c => c.nom) : [...PLAYERS, "Coach", "Admin", "Bénévole"];
+    if (allNoms.includes(val)) {
+      loginNeedsSetup = null;
+      render();
+      checkAccountStatus(val);
+    } else {
+      loginNeedsSetup = null;
+      render();
+    }
   };
 
   const changeAccount = document.getElementById("login-change-account");
@@ -2396,6 +2390,8 @@ function renderSalariesPage() {
         <div class="file-info"
           data-salaries-open-file="${f.id}"
           data-salaries-file-preview="${f.previewUrl ? escapeHtml(f.previewUrl) : ''}"
+          data-salaries-file-image="${f.imageUrl ? escapeHtml(f.imageUrl) : ''}"
+          data-salaries-file-view="${f.viewUrl ? escapeHtml(f.viewUrl) : ''}"
           data-salaries-file-islink="${f.isLink ? '1' : '0'}"
           data-salaries-file-linkurl="${f.linkUrl ? escapeHtml(f.linkUrl) : ''}"
           data-salaries-file-name="${escapeHtml(f.name)}">
@@ -2415,7 +2411,10 @@ function renderSalariesPage() {
         <div class="modal-close" id="salaries-modal-close">✕</div>
         <div class="modal-title">${escapeHtml(pf.name)}</div>
       </div>
-      <div class="modal-preview"><iframe src="${escapeHtml(pf.previewUrl)}" allow="autoplay; fullscreen"></iframe></div>
+      <div class="modal-preview">${pf.imageUrl
+        ? `<img src="${escapeHtml(pf.imageUrl)}" alt="${escapeHtml(pf.name)}" style="width:100%; height:100%; object-fit:contain;" />`
+        : `<iframe src="${escapeHtml(pf.previewUrl)}" allow="autoplay; fullscreen"></iframe>`}</div>
+      ${pf.viewUrl ? `<div class="modal-footer" style="text-align:center; margin-top:10px;"><a href="${escapeHtml(pf.viewUrl)}" target="_blank" rel="noopener" style="color:var(--accent2); font-size:11.5px; font-weight:700; text-decoration:underline;">Ça ne s'affiche pas ? Ouvrir dans Google Drive</a></div>` : ""}
     </div>`;
   }
 
@@ -2750,8 +2749,13 @@ function attachEvents() {
         return;
       }
       const previewUrl = el.dataset.salariesFilePreview;
-      if (!previewUrl) return;
-      window.__salariesPreviewFile = { id: el.dataset.salariesOpenFile, name: el.dataset.salariesFileName, previewUrl };
+      const imageUrl = el.dataset.salariesFileImage;
+      const viewUrl = el.dataset.salariesFileView;
+      if (!previewUrl && !imageUrl) {
+        if (viewUrl) window.open(viewUrl, "_blank");
+        return;
+      }
+      window.__salariesPreviewFile = { id: el.dataset.salariesOpenFile, name: el.dataset.salariesFileName, previewUrl, imageUrl, viewUrl };
       render();
     };
   });
