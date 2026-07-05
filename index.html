@@ -300,6 +300,8 @@
   .nc-actions .btn { flex: 1; }
 
   .add-form { background: #0d1018; border: 1px dashed #243049; border-radius: 14px; padding: 12px; margin-bottom: 12px; animation: qaFadeIn 0.18s ease-out; }
+  .scorenco-widget-todo { border: 1px dashed #3a4666; background: #0d1018ee; }
+  .scorenco-widget-todo code { background: #1a1f30; padding: 1px 5px; border-radius: 5px; font-size: 10px; }
   @keyframes qaFadeIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
   .add-form input, .add-form select { margin-bottom: 6px; }
   .add-form .field-label { margin: 8px 0 4px; }
@@ -403,11 +405,53 @@ const ACTIONS = [
 const PLAYERS = ["Thomas L.","JM B.","Hugo R.","Yann N.","Arnaud H.","Victor S.","Romain J.","Volodia M.","Victor P.","Mattéo MP.","Gabriel W.","Basil L.","Brahim I.","Maximilien M.","Arthur M.","Damien P.","Alexis W.","Mathieu S.","Nicolas Z.","Robin S."];
 const TEAMS = ["SM1", "U17", "SM2"];
 
+// Colle ici l'URL d'intégration (iframe) du widget "Équipe" créé sur ton espace Score'n'co,
+// une par équipe. Laisse vide "" tant que le widget n'est pas encore créé : la carte ne
+// s'affiche simplement pas pour cette équipe-là.
+const SCORENCO_WIDGETS = {
+  SM1: "",
+  U17: "",
+  SM2: "",
+};
+
+function renderScorencoWidget(equipe) {
+  const url = SCORENCO_WIDGETS[equipe];
+  if (url) {
+    return `<div class="card scorenco-widget">
+      <div class="section-h" style="margin-bottom:8px;">Calendrier officiel FFHB — ${equipe}</div>
+      <iframe src="${escapeHtml(url)}" style="width:100%; border:none; height:260px; border-radius:10px; display:block;" loading="lazy"></iframe>
+    </div>`;
+  }
+  // Pas encore configuré : rappel visible pour l'Admin uniquement (pas de TODO technique
+  // affiché aux joueurs/coachs), pour ne pas oublier de créer le widget et coller son URL.
+  if (session.role !== "Admin") return "";
+  return `<div class="card scorenco-widget-todo">
+    <div class="section-h" style="margin-bottom:6px;">Calendrier officiel FFHB — ${equipe}</div>
+    <div class="muted" style="font-size:11px; line-height:1.5;">
+      À configurer : demande au club s'il existe déjà un compte <b style="color:#fff;">scorenco.com</b>, sinon crée-en un (gratuit), puis crée un widget "Équipe" pour ${equipe} et colle son URL dans le code (<code style="color:#00d4ff;">SCORENCO_WIDGETS</code>).
+    </div>
+  </div>`;
+}
+
+// Équipes (SM1/U17/SM2) où ce compte est Joueur ou Coach, en tenant compte des comptes liés
+// (même "Personne") pour les doubles casquettes — sert à savoir combien de cartes afficher.
+function myScorencoTeams() {
+  const myRow = findCompteRow(session.nom);
+  const personne = myRow ? (myRow[4] || myRow[0]) : session.nom;
+  const linked = comptes.slice(1).filter(c => (c[4] || c[0]) === personne);
+  const teams = new Set();
+  linked.forEach(r => {
+    if ((r[1] === "Joueur" || r[1] === "Coach") && TEAMS.includes(r[3])) teams.add(r[3]);
+  });
+  if (teams.size === 0 && TEAMS.includes(session.equipe)) teams.add(session.equipe);
+  return [...teams];
+}
+
 const LOGO_DATA_URI = "icon-512.png";
 const SESSION_KEY = "caisse-noire-session"; // {nom, role, code, equipe}
 const APP_VERSION_KEY = "caisse-noire-app-version";
 const LAST_USER_KEY = "lustuzone-last-user"; // simple mémorisation du dernier nom connecté sur cet appareil (pas le code)
-const APP_VERSION = "2026-07-05-08"; // À incrémenter à chaque mise à jour déployée
+const APP_VERSION = "2026-07-05-10"; // À incrémenter à chaque mise à jour déployée
 const SEASON_START = new Date(2026, 8, 1);  // 1er septembre 2026
 const SEASON_END = new Date(2027, 5, 30);   // 30 juin 2027
 
@@ -1454,6 +1498,10 @@ function renderHome() {
     html += `<div class="page-title">Salut ${session.nom}</div><div class="page-sub">Aucun événement prévu pour le moment.</div>`;
   }
 
+  if (session.role !== "Admin") {
+    myScorencoTeams().forEach(t => { html += renderScorencoWidget(t); });
+  }
+
   html += renderNextEventCard();
 
   // Stats compactes : caisse noire (SM1 uniquement, structure Grid figée) + présence perso
@@ -1646,6 +1694,7 @@ function renderAgenda() {
   }
 
   html += renderTeamSwitcher(switcherTeams, activeTeam, "agenda-team");
+  html += renderScorencoWidget(activeTeam);
 
   if (session.role === "Admin" && activeTeam !== "Toutes") {
     html += `<button class="add-toggle" id="toggle-generate-trainings" style="border-style:solid; color:#7a8aad;">📅 ${window.__showGenerateTrainings ? "− Fermer" : "Générer les entraînements (mar/jeu)"}</button>`;
