@@ -236,6 +236,10 @@
   .justif-saved { display: flex; align-items: center; justify-content: space-between; gap: 10px; background: rgba(255,90,90,0.08); border: 1px solid rgba(255,90,90,0.25); border-radius: 10px; padding: 9px 10px; }
   .justif-saved span { font-size: 12px; color: #ff9c8a; font-weight: 600; flex: 1; min-width: 0; }
   .justif-edit-btn { flex-shrink: 0; background: #1a1f30; border: 1px solid #2a2340; color: #c3ccde; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; padding: 6px 10px; border-radius: 8px; cursor: pointer; font-family: 'Archivo', sans-serif; }
+  .cn-modifier-btn { display: inline-block; margin-top: 9px; }
+  .cn-edit-picker { margin-top: 10px; padding-top: 10px; border-top: 1px dashed #232a3f; }
+  .cn-edit-pick-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; margin-bottom: 6px; background: #0d1018; border: 1px solid #232a3f; border-radius: 9px; font-size: 11.5px; color: #e8e8ee; font-weight: 600; cursor: pointer; }
+  .cn-edit-cancel { text-align: center; font-size: 10.5px; color: #7a8aad; font-weight: 700; text-transform: uppercase; padding: 6px 0 2px; cursor: pointer; }
   .justif-note { margin-top: 6px; font-size: 11px; color: #ff9c8a; background: rgba(255,90,90,0.08); border: 1px solid rgba(255,90,90,0.25); border-radius: 9px; padding: 7px 10px; }
   .justif-note b { color: #ff5a5a; font-weight: 800; }
   .ev-actions { display: flex; gap: 10px; flex-shrink: 0; align-items: center; }
@@ -362,7 +366,7 @@ const TEAMS = ["SM1", "U17", "SM2"];
 const LOGO_DATA_URI = "icon-512.png";
 const SESSION_KEY = "caisse-noire-session"; // {nom, role, code, equipe}
 const APP_VERSION_KEY = "caisse-noire-app-version";
-const APP_VERSION = "2026-07-04-01"; // À incrémenter à chaque mise à jour déployée
+const APP_VERSION = "2026-07-04-02"; // À incrémenter à chaque mise à jour déployée
 const SEASON_START = new Date(2026, 8, 1);  // 1er septembre 2026
 const SEASON_END = new Date(2027, 5, 30);   // 30 juin 2027
 
@@ -451,7 +455,7 @@ function escapeHtml(str) {
 }
 
 function isFormOpen() {
-  return !!showAddEvent || !!window.__editingEvenementId || !!window.__editingPaiementId || !!window.__showAddPaiement || !!window.__showChangeCode || !!window.__showGenerateTrainings || !!window.__profilPosteAdding || (window.__profilPosteEditIndex !== null && window.__profilPosteEditIndex !== undefined) || !!window.__showAddActualite;
+  return !!showAddEvent || !!window.__editingEvenementId || !!window.__editingPaiementId || !!window.__showAddPaiement || !!window.__showChangeCode || !!window.__showGenerateTrainings || !!window.__profilPosteAdding || (window.__profilPosteEditIndex !== null && window.__profilPosteEditIndex !== undefined) || !!window.__showAddActualite || !!window.__cnEditPlayer;
 }
 
 async function fetchAll() {
@@ -1636,16 +1640,21 @@ function renderCaisseNoireSummary() {
     html += renderQuickAddForm();
   }
 
+  const isAdmin = session.role === "Admin";
+  const FROZEN_ACTIONS = ["participation mensuelle"];
+
   const renderPlayerCard = (p) => {
     const total = playerTotal(p);
     const items = [];
     ACTIONS.forEach((a, i) => {
       const count = (grid[p] && grid[p][i]) || 0;
-      if (count > 0) items.push({ label: a[0], count, value: count * a[1] });
+      if (count > 0) items.push({ label: a[0], count, value: count * a[1], index: i, frozen: FROZEN_ACTIONS.includes(a[0]) });
     });
     const isExpanded = !!expanded[p];
     const visibleItems = isExpanded ? items : items.slice(0, 3);
     const hiddenCount = items.length - visibleItems.length;
+    const editingThis = isAdmin && window.__cnEditPlayer === p;
+    const editableItems = items.filter(it => !it.frozen);
 
     let bubbles = visibleItems.map(it =>
       `<span class="cn-bubble">${it.label} ×${it.count} <span class="cn-bubble-val">${fmt(it.value)}€</span></span>`
@@ -1654,6 +1663,36 @@ function renderCaisseNoireSummary() {
       bubbles += `<span class="cn-bubble cn-bubble-more" data-expand-player="${p}">+${hiddenCount} autre${hiddenCount > 1 ? "s" : ""}</span>`;
     } else if (isExpanded && items.length > 3) {
       bubbles += `<span class="cn-bubble cn-bubble-more" data-collapse-player="${p}">Réduire</span>`;
+    }
+
+    let editBlock = "";
+    if (editingThis) {
+      if (window.__cnEditActionIndex === null || window.__cnEditActionIndex === undefined) {
+        editBlock = `<div class="cn-edit-picker">
+          ${editableItems.length === 0
+            ? `<div class="muted" style="font-size:11px;">Aucune action modifiable pour ce joueur.</div>`
+            : editableItems.map(it => `<div class="cn-edit-pick-row" data-cn-pick-action="${it.index}" data-cn-pick-player="${p}">
+                <span>${it.label} ×${it.count}</span><span class="cn-bubble-val">${fmt(it.value)}€</span>
+              </div>`).join("")}
+          <div class="cn-edit-cancel" data-cn-edit-cancel="1">Annuler</div>
+        </div>`;
+      } else {
+        const idx = window.__cnEditActionIndex;
+        const currentCount = (grid[p] && grid[p][idx]) || 0;
+        const qty = window.__cnEditQty !== null && window.__cnEditQty !== undefined ? window.__cnEditQty : currentCount;
+        editBlock = `<div class="cn-edit-picker">
+          <div class="field-label">${ACTIONS[idx][0]}</div>
+          <div class="qty-stepper">
+            <button type="button" class="qty-btn" data-cn-edit-delta="-1">−</button>
+            <div class="qty-value">${qty}</div>
+            <button type="button" class="qty-btn" data-cn-edit-delta="1">+</button>
+          </div>
+          <div class="row-flex" style="margin-top:8px;">
+            <button class="btn" style="flex:1;" data-cn-edit-save="${idx}" data-cn-edit-save-player="${p}">Enregistrer</button>
+            <button class="btn secondary" style="flex:1;" data-cn-edit-cancel="1">Annuler</button>
+          </div>
+        </div>`;
+      }
     }
 
     return `<div class="card cn-card">
@@ -1665,6 +1704,8 @@ function renderCaisseNoireSummary() {
             <span class="cn-amount">${fmt(total)} €</span>
           </div>
           ${items.length ? `<div class="cn-bubbles">${bubbles}</div>` : `<div class="cn-actions muted">Aucune action enregistrée</div>`}
+          ${isAdmin && items.length > 0 ? `<div class="justif-edit-btn cn-modifier-btn" data-cn-toggle-edit="${p}">${editingThis ? "Fermer" : "Modifier"}</div>` : ""}
+          ${editBlock}
         </div>
       </div>
     </div>`;
@@ -1861,12 +1902,12 @@ function currentPostes() {
   return row && row[5] ? String(row[5]).split(",").map(s => s.trim()).filter(Boolean) : [];
 }
 
-function renderPosteCard(postes) {
+function renderPosteCard(postes, unwrapped) {
   const editingIndex = window.__profilPosteEditIndex;
   const remaining = POSTES.filter(p => !postes.includes(p));
   const showAddRow = postes.length === 0 || (!!window.__profilPosteAdding && remaining.length > 0);
 
-  let html = `<div class="card"><div class="section-h">Poste</div>`;
+  let html = `<div class="section-h">Poste</div>`;
 
   postes.forEach((p, i) => {
     if (editingIndex === i) {
@@ -1897,8 +1938,8 @@ function renderPosteCard(postes) {
     html += `<button class="add-toggle" id="profil-poste-add-toggle" style="margin-top:4px;">+ Ajouter un poste</button>`;
   }
 
-  html += `</div>`;
-  return html;
+  if (unwrapped) return html;
+  return `<div class="card">${html}</div>`;
 }
 
 function renderStatsRecapCard(postes) {
@@ -1948,12 +1989,15 @@ function renderProfilPage() {
     ${!photoUrl ? `<div class="profil-photo-note">Photo officielle à venir — ajoutée par l'Admin</div>` : ""}
   </div></div>`;
 
-  // Rôle dans le groupe
-  html += `<div class="card">
-    <div class="section-h">Rôle dans le groupe</div>
-    <div style="display:flex; flex-wrap:wrap; gap:6px;">
-      ${linkedRows.map(r => `<span class="badge">${r[1]} ${r[3] || "SM1"}</span>`).join("")}
+  // Rôle dans le club + Poste, côte à côte
+  html += `<div style="display:flex; gap:10px; align-items:stretch;">
+    <div class="card" style="flex:1; min-width:0;">
+      <div class="section-h">Rôle dans le club</div>
+      <div style="display:flex; flex-wrap:wrap; gap:6px;">
+        ${linkedRows.map(r => `<span class="badge">${r[1]} ${r[3] || "SM1"}</span>`).join("")}
+      </div>
     </div>
+    ${canEditPoste ? `<div class="card" style="flex:1; min-width:0;">${renderPosteCard(postes, true)}</div>` : ""}
   </div>`;
 
   if (showVueToggle) {
@@ -1962,8 +2006,6 @@ function renderProfilPage() {
       <button type="button" class="team-switch-btn ${vue === 'coach' ? 'active' : ''}" data-profil-vue="coach">Vue Coach</button>
     </div>`;
   }
-
-  if (canEditPoste) html += renderPosteCard(postes);
 
   if (vue === "coach") {
     const coachRows = linkedRows.filter(r => r[1] === "Coach");
@@ -2165,7 +2207,7 @@ function vibrate() {
 
 // Retour visuel immédiat au toucher, indépendant du rafraîchissement de la page
 // (le CSS :active seul n'a pas toujours le temps de s'afficher avant le re-rendu)
-const TAP_SELECTOR = ".btn, .nav-btn, .toggle-btn, .ev-edit, .ev-del, .bottom-nav button, .expand-toggle, .avatar-btn, .avatar-menu-item, .qty-btn, .add-toggle, .justif-edit-btn, .team-switch-btn";
+const TAP_SELECTOR = ".btn, .nav-btn, .toggle-btn, .ev-edit, .ev-del, .bottom-nav button, .expand-toggle, .avatar-btn, .avatar-menu-item, .qty-btn, .add-toggle, .justif-edit-btn, .team-switch-btn, .cn-edit-pick-row, .cn-edit-cancel";
 document.addEventListener("touchstart", (e) => {
   const el = e.target.closest(TAP_SELECTOR);
   if (el) el.classList.add("tap-active");
@@ -2574,6 +2616,61 @@ function attachEvents() {
       window.__expandedPlayers = window.__expandedPlayers || {};
       window.__expandedPlayers[el.dataset.collapsePlayer] = false;
       render();
+    };
+  });
+
+  document.querySelectorAll("[data-cn-toggle-edit]").forEach(el => {
+    el.onclick = () => {
+      vibrate();
+      const p = el.dataset.cnToggleEdit;
+      window.__cnEditPlayer = window.__cnEditPlayer === p ? null : p;
+      window.__cnEditActionIndex = null;
+      window.__cnEditQty = null;
+      render();
+    };
+  });
+
+  document.querySelectorAll("[data-cn-pick-action]").forEach(el => {
+    el.onclick = () => {
+      window.__cnEditActionIndex = parseInt(el.dataset.cnPickAction, 10);
+      window.__cnEditQty = null;
+      render();
+    };
+  });
+
+  document.querySelectorAll("[data-cn-edit-cancel]").forEach(el => {
+    el.onclick = () => {
+      window.__cnEditPlayer = null;
+      window.__cnEditActionIndex = null;
+      window.__cnEditQty = null;
+      render();
+    };
+  });
+
+  document.querySelectorAll("[data-cn-edit-delta]").forEach(el => {
+    el.onclick = () => {
+      const idx = window.__cnEditActionIndex;
+      const player = window.__cnEditPlayer;
+      const current = window.__cnEditQty !== null && window.__cnEditQty !== undefined
+        ? window.__cnEditQty
+        : ((grid[player] && grid[player][idx]) || 0);
+      const delta = parseInt(el.dataset.cnEditDelta, 10);
+      window.__cnEditQty = Math.max(0, current + delta);
+      render();
+    };
+  });
+
+  document.querySelectorAll("[data-cn-edit-save]").forEach(el => {
+    el.onclick = () => {
+      const idx = parseInt(el.dataset.cnEditSave, 10);
+      const player = el.dataset.cnEditSavePlayer;
+      const qty = window.__cnEditQty !== null && window.__cnEditQty !== undefined
+        ? window.__cnEditQty
+        : ((grid[player] && grid[player][idx]) || 0);
+      window.__cnEditPlayer = null;
+      window.__cnEditActionIndex = null;
+      window.__cnEditQty = null;
+      writeCell(player, idx, qty);
     };
   });
 
