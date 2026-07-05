@@ -422,13 +422,13 @@ const SCORENCO_WIDGET_IDS = {
 function renderScorencoWidget(equipe) {
   const widgetId = SCORENCO_WIDGET_IDS[equipe];
   if (widgetId) {
-    ensureScorencoScript();
+    // On ne pose ici qu'une simple ancre vide : le vrai widget (créé une seule fois, dans
+    // un portail hors de #app) y sera déplacé après le rendu par relocateScorencoWidgets().
+    // Ça évite de le détruire/recréer à chaque reconstruction périodique de la page, ce qui
+    // le laissait bloqué indéfiniment sur son écran de chargement.
     return `<div class="card">
       <div class="section-h" style="margin-bottom:8px;">Calendrier officiel FFHB — ${equipe}</div>
-      <div class="scorenco-widget" data-widget-type="team" data-widget-id="${escapeHtml(widgetId)}" style="background:#F2F5F9; height:500px; display:flex; align-items:center; justify-content:center; flex-direction:column; text-transform:uppercase; font-family:sans-serif; font-weight:bolder; gap:9px; color:#1E457B; border-radius:10px; overflow:hidden;">
-        <div class="ldsdr"></div>
-        Score'n'co - HBC Bischoffsheim
-      </div>
+      <div data-scorenco-anchor="${escapeHtml(equipe)}" style="min-height:500px;"></div>
     </div>`;
   }
   // Pas encore configuré : rappel visible pour l'Admin uniquement (pas de TODO technique
@@ -440,6 +440,46 @@ function renderScorencoWidget(equipe) {
       À configurer : demande au club s'il existe déjà un compte <b style="color:#fff;">scorenco.com</b>, sinon crée-en un (gratuit), puis crée un widget "Équipe" pour ${equipe} et donne-moi son identifiant (<code style="color:#00d4ff;">data-widget-id</code>) pour le coller dans <code style="color:#00d4ff;">SCORENCO_WIDGET_IDS</code>.
     </div>
   </div>`;
+}
+
+// Portail : les vrais widgets Score'n'co vivent en dehors de #app (jamais détruits par nos
+// reconstructions), et sont simplement déplacés (pas recréés) vers leur ancre à chaque rendu.
+function ensureScorencoPortal() {
+  let portal = document.getElementById("scorenco-portal");
+  if (!portal) {
+    portal = document.createElement("div");
+    portal.id = "scorenco-portal";
+    portal.style.display = "none";
+    document.body.appendChild(portal);
+  }
+  return portal;
+}
+
+function getOrCreateScorencoWidgetEl(equipe, widgetId) {
+  let el = document.getElementById("scorenco-widget-" + equipe);
+  if (!el) {
+    const portal = ensureScorencoPortal();
+    el = document.createElement("div");
+    el.id = "scorenco-widget-" + equipe;
+    el.className = "scorenco-widget";
+    el.setAttribute("data-widget-type", "team");
+    el.setAttribute("data-widget-id", widgetId);
+    el.style.cssText = "background:#F2F5F9; height:500px; display:flex; align-items:center; justify-content:center; flex-direction:column; text-transform:uppercase; font-family:sans-serif; font-weight:bolder; gap:9px; color:#1E457B; border-radius:10px; overflow:hidden;";
+    el.innerHTML = "<div class=\"ldsdr\"></div>Score'n'co - HBC Bischoffsheim";
+    portal.appendChild(el);
+    ensureScorencoScript();
+  }
+  return el;
+}
+
+function relocateScorencoWidgets() {
+  document.querySelectorAll("[data-scorenco-anchor]").forEach(anchor => {
+    const equipe = anchor.dataset.scorencoAnchor;
+    const widgetId = SCORENCO_WIDGET_IDS[equipe];
+    if (!widgetId) return;
+    const el = getOrCreateScorencoWidgetEl(equipe, widgetId);
+    if (el.parentElement !== anchor) anchor.appendChild(el);
+  });
 }
 
 // Charge le script Score'n'co une seule fois (il scanne la page pour remplir les
@@ -487,7 +527,7 @@ const LOGO_DATA_URI = "icon-512.png";
 const SESSION_KEY = "caisse-noire-session"; // {nom, role, code, equipe}
 const APP_VERSION_KEY = "caisse-noire-app-version";
 const LAST_USER_KEY = "lustuzone-last-user"; // simple mémorisation du dernier nom connecté sur cet appareil (pas le code)
-const APP_VERSION = "2026-07-05-14"; // À incrémenter à chaque mise à jour déployée
+const APP_VERSION = "2026-07-05-15"; // À incrémenter à chaque mise à jour déployée
 const SEASON_START = new Date(2026, 8, 1);  // 1er septembre 2026
 const SEASON_END = new Date(2027, 5, 30);   // 30 juin 2027
 
@@ -1332,6 +1372,11 @@ function render() {
       }
     }
   }
+
+  // Déplace (plutôt que recrée) les widgets Score'n'co déjà chargés dans leur emplacement
+  // du rendu courant — sans ça, la reconstruction périodique de la page les ferait recharger
+  // sans fin (leur script ne redétecte pas une zone recréée avec le même contenu).
+  relocateScorencoWidgets();
 }
 
 const NAV_ICONS = {
@@ -2302,10 +2347,11 @@ function renderProfilPage() {
     </div>`;
   } else {
     const joueurRow = linkedRows.find(r => r[1] === "Joueur");
+    const isJoueur = !!joueurRow || session.role === "Joueur";
     const joueurNom = joueurRow ? joueurRow[0] : session.nom;
     const joueurEquipe = joueurRow ? (joueurRow[3] || "SM1") : (session.equipe || "SM1");
     html += renderPtypeCard("Présence par type", computePresenceByType(joueurNom, joueurEquipe));
-    html += renderStatsRecapCard(postes);
+    if (isJoueur) html += renderStatsRecapCard(postes);
   }
 
   return html;
