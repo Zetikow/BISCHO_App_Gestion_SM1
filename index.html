@@ -520,7 +520,7 @@ function renderScorencoWidget(equipe) {
   }
   // Pas encore configuré : rappel visible pour l'Admin uniquement (pas de TODO technique
   // affiché aux joueurs/coachs), pour ne pas oublier de créer le widget et coller son ID.
-  if (session.role !== "Admin") return "";
+  if (!hasRole("Admin")) return "";
   return `<div class="card scorenco-widget-todo">
     <div class="section-h" style="margin-bottom:6px;">Calendrier officiel FFHB — ${equipe}</div>
     <div class="muted" style="font-size:11px; line-height:1.5;">
@@ -671,32 +671,22 @@ function renderMatchCard(ev, isPast) {
   </div>`;
 }
 
-// Équipes (SM1/U17/SM2) où ce compte est Joueur ou Coach, en tenant compte des comptes liés
-// (même "Personne") pour les doubles casquettes — sert à savoir combien de cartes afficher.
+// Équipes (SM1/U17/SM2) où ce compte est Joueur ou Coach — la session cumule déjà tous les
+// rôles liés automatiquement, plus besoin de recalculer via les comptes/"Personne".
 function myScorencoTeams() {
-  const myRow = findCompteRow(session.nom);
-  const personne = myRow ? (myRow[4] || myRow[0]) : session.nom;
-  const linked = comptes.slice(1).filter(c => (c[4] || c[0]) === personne);
   const teams = new Set();
-  linked.forEach(r => {
-    if ((r[1] === "Joueur" || r[1] === "Coach") && TEAMS.includes(r[3])) teams.add(r[3]);
+  (session.roles || []).forEach(r => {
+    if ((r.role === "Joueur" || r.role === "Coach") && TEAMS.includes(r.equipe)) teams.add(r.equipe);
   });
-  if (teams.size === 0 && TEAMS.includes(session.equipe)) teams.add(session.equipe);
   teams.add("SM1"); // équipe première du club : visible pour tout le monde, quelle que soit l'équipe
   return [...teams];
 }
 
-// Retrouve l'identité "Joueur" liée (même "Personne") à ce compte, quelle que soit la ligne
-// utilisée pour se connecter. Indispensable pour un compte Admin/Coach qui est aussi joueur
-// d'une autre équipe : sans ça, sa présence perso se calculait sur l'équipe de la session en
-// cours (ex: U17 pour un Admin/Coach U17) au lieu de sa vraie équipe de joueur (ex: SM1).
+// Retrouve l'identité "Joueur" de la session (peu importe le rôle utilisé pour se connecter,
+// puisque tous les rôles liés sont désormais cumulés directement dans session.roles).
 function myJoueurIdentity() {
-  const myRow = findCompteRow(session.nom);
-  const personne = myRow ? (myRow[4] || myRow[0]) : session.nom;
-  const linked = comptes.slice(1).filter(c => (c[4] || c[0]) === personne);
-  const joueurRow = linked.find(r => r[1] === "Joueur");
-  if (joueurRow) return { nom: joueurRow[0], equipe: joueurRow[3] || "SM1" };
-  if (session.role === "Joueur") return { nom: session.nom, equipe: session.equipe || "SM1" };
+  const joueurRole = (session.roles || []).find(r => r.role === "Joueur");
+  if (joueurRole) return { nom: joueurRole.nom || session.nom, equipe: joueurRole.equipe || "SM1" };
   return null;
 }
 
@@ -721,6 +711,34 @@ let salariesCache = {}; // folderId -> {folders, files, currentFolder} — perme
 
 let session = JSON.parse(localStorage.getItem(SESSION_KEY) || "null");
 if (session && !session.code) { session = null; localStorage.removeItem(SESSION_KEY); }
+
+// Un compte multi-rôles (ex: Joueur SM1 + Coach U17 + Admin) cumule automatiquement tous ses
+// droits dès la connexion — pas de "casquette" à choisir. session.roles est la liste de tous
+// les rôles/équipes de la personne ; ces fonctions remplacent les anciens session.role/equipe.
+function hasRole(roleName) {
+  return !!session && Array.isArray(session.roles) && session.roles.some(r => r.role === roleName);
+}
+function equipesForRole(roleName) {
+  if (!session || !Array.isArray(session.roles)) return [];
+  return [...new Set(session.roles.filter(r => r.role === roleName).map(r => r.equipe))];
+}
+function isInTeam(equipeName) {
+  return !!session && Array.isArray(session.roles) && session.roles.some(r => r.equipe === equipeName);
+}
+// Équipe "par défaut" à utiliser quand le contexte ne précise pas de rôle particulier —
+// priorité Joueur, puis Coach, puis la première équipe disponible.
+function primaryEquipe() {
+  if (!session || !Array.isArray(session.roles) || session.roles.length === 0) return "SM1";
+  const joueur = session.roles.find(r => r.role === "Joueur");
+  if (joueur) return joueur.equipe;
+  const coach = session.roles.find(r => r.role === "Coach");
+  if (coach) return coach.equipe;
+  return session.roles[0].equipe || "SM1";
+}
+function rolesLabel() {
+  if (!session || !Array.isArray(session.roles)) return "";
+  return [...new Set(session.roles.map(r => r.role))].join(" / ");
+}
 
 // Si une nouvelle version de l'appli a été déployée, on déconnecte tout le monde
 // pour garantir que chacun recharge bien la dernière version et ses dernières données
@@ -885,7 +903,7 @@ async function deletePaiementApi(id) {
 
 async function addEvenementApi(date, heure, type, titre, lieu, equipe) {
   try {
-    await fetch(`${GOOGLE_SCRIPT_URL}?action=addEvenement&date=${encodeURIComponent(date)}&heure=${encodeURIComponent(heure)}&type=${encodeURIComponent(type)}&titre=${encodeURIComponent(titre)}&lieu=${encodeURIComponent(lieu)}&equipe=${encodeURIComponent(equipe || session.equipe || "SM1")}&authNom=${encodeURIComponent(session.nom)}&authCode=${encodeURIComponent(session.code)}`);
+    await fetch(`${GOOGLE_SCRIPT_URL}?action=addEvenement&date=${encodeURIComponent(date)}&heure=${encodeURIComponent(heure)}&type=${encodeURIComponent(type)}&titre=${encodeURIComponent(titre)}&lieu=${encodeURIComponent(lieu)}&equipe=${encodeURIComponent(equipe || primaryEquipe())}&authNom=${encodeURIComponent(session.nom)}&authCode=${encodeURIComponent(session.code)}`);
     showAddEvent = false;
     await fetchAll();
   } catch (err) { isOnline = false; render(); }
@@ -1120,7 +1138,7 @@ async function setInitialCode(nom, newCode) {
     const res = await fetch(`${GOOGLE_SCRIPT_URL}?action=setCode&nom=${encodeURIComponent(nom)}&newCode=${encodeURIComponent(newCode)}`);
     const data = await res.json();
     if (data.ok) {
-      session = { nom, role: String(data.role || "").trim(), code: newCode, equipe: String(data.equipe || "SM1").trim() };
+      session = { nom, code: newCode, roles: data.roles || [] };
       localStorage.setItem(SESSION_KEY, JSON.stringify(session));
       localStorage.setItem(LAST_USER_KEY, nom);
       syncOneSignalLogin();
@@ -1146,7 +1164,7 @@ async function tryLogin(nom, code) {
     const res = await fetch(`${GOOGLE_SCRIPT_URL}?action=login&nom=${encodeURIComponent(nom)}&code=${encodeURIComponent(code)}`);
     const data = await res.json();
     if (data.ok) {
-      session = { nom, role: String(data.role || "").trim(), code, equipe: String(data.equipe || "SM1").trim() };
+      session = { nom, code, roles: data.roles || [] };
       localStorage.setItem(SESSION_KEY, JSON.stringify(session));
       localStorage.setItem(LAST_USER_KEY, nom);
       syncOneSignalLogin();
@@ -1375,15 +1393,15 @@ function eventEquipe(ev) {
 }
 function getVisibleEvenements() {
   let list = evenements;
-  if (session && session.role !== "Admin") {
-    const myEquipe = session.equipe || "SM1";
+  if (session && !hasRole("Admin")) {
+    const myEquipe = primaryEquipe();
     list = list.filter(ev => {
       const eq = eventEquipe(ev);
       if (myEquipe === "Toutes") return eq === "Toutes";
       return eq === myEquipe || eq === "Toutes";
     });
   }
-  if (session && session.role === "Bénévole") {
+  if (session && hasRole("Bénévole")) {
     list = list.filter(ev => !isEntrainement(ev));
   }
   return list;
@@ -1396,17 +1414,14 @@ function sortedVisibleEvenements() {
 // Équipes qu'un compte peut consulter : la sienne, celles de ses comptes liés (même "Personne"
 // dans Comptes — ex: un joueur SM1 qui est aussi coach U17), et toutes pour l'Admin.
 function myAllowedEquipes() {
-  if (session.role === "Admin") return TEAMS.slice();
-  const myRow = findCompteRow(session.nom);
-  const personne = myRow ? (myRow[4] || myRow[0]) : session.nom;
-  const linked = comptes.slice(1).filter(c => (c[4] || c[0]) === personne);
-  const set = new Set(linked.map(c => c[3] || "SM1"));
-  set.add(session.equipe || "SM1");
+  if (hasRole("Admin")) return TEAMS.slice();
+  const set = new Set((session.roles || []).map(r => r.equipe));
+  set.add(primaryEquipe());
   return TEAMS.filter(t => set.has(t));
 }
 
 function equipesForSwitcher() {
-  if (session.role === "Admin") return TEAMS.slice();
+  if (hasRole("Admin")) return TEAMS.slice();
   return myAllowedEquipes();
 }
 
@@ -1422,7 +1437,7 @@ function sortedEventsForTeamView(equipeView) {
   } else {
     list = evenements.filter(ev => { const eq = eventEquipe(ev); return eq === equipeView || eq === "Toutes"; });
   }
-  if (session.role === "Bénévole") list = list.filter(ev => !isEntrainement(ev));
+  if (hasRole("Bénévole")) list = list.filter(ev => !isEntrainement(ev));
   return list.slice().sort((a, b) => eventDateObj(a) - eventDateObj(b));
 }
 
@@ -1509,7 +1524,7 @@ function render() {
       <div class="avatar-btn" id="avatar-btn">${getInitials(session.nom)}</div>
       ${window.__avatarMenuOpen ? `<div class="avatar-menu">
         <div class="avatar-menu-name">${session.nom}</div>
-        <div class="badge avatar-menu-role">${session.role}</div>
+        <div class="badge avatar-menu-role">${rolesLabel()}</div>
         <div class="avatar-menu-item" id="menu-profil">Mon profil</div>
         <div class="avatar-menu-item" id="menu-changecode">Changer le code</div>
         <div class="avatar-menu-item danger" id="menu-logout">Se déconnecter</div>
@@ -1538,7 +1553,7 @@ function render() {
     html += `<div class="status-bar status-offline">Hors ligne - nouvelle tentative...</div>`;
   }
 
-  const tabs = getTabsForRole(session.role, session.equipe);
+  const tabs = getTabsForRole();
   const mainTabs = tabs.filter(t => t.main);
   const extraTabs = tabs.filter(t => !t.main);
   const currentIsExtra = extraTabs.some(t => t.id === currentPage);
@@ -1622,17 +1637,16 @@ const NAV_ICONS = {
   salaries: '<path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/>',
 };
 
-function getTabsForRole(role, equipe) {
+function getTabsForRole() {
   const tabs = [
     { id: "home", label: "Accueil", main: true },
     { id: "agenda", label: "Agenda", main: true },
     { id: "actualites", label: "Actualités", main: true },
   ];
-  // Caisse noire et Paiements restent réservés à la SM1 pour le moment
-  // (l'Admin, dont l'équipe est "Toutes", garde accès à tout). Présence, elle,
-  // est désormais disponible pour toutes les équipes (roster tiré des comptes réels).
-  const isSM1 = equipe === "SM1" || role === "Admin";
-  if (isSM1 && (role === "Joueur" || role === "Coach" || role === "Admin")) {
+  // Caisse noire reste réservée à la SM1 pour le moment (l'Admin garde accès à tout, peu
+  // importe son équipe). On l'affiche si l'un des rôles cumulés donne accès à la SM1.
+  const isSM1 = isInTeam("SM1") || hasRole("Admin");
+  if (isSM1 && (hasRole("Joueur") || hasRole("Coach") || hasRole("Admin"))) {
     tabs.push({ id: "table", label: "Caisse", main: true });
   }
 
@@ -1642,9 +1656,9 @@ function getTabsForRole(role, equipe) {
   }
 
   const extra = [];
-  if (role === "Coach" || role === "Admin") extra.push({ id: "presence", label: "Présence", main: false });
-  if (role === "Admin") extra.push({ id: "paiements", label: "Paiements", main: false });
-  if (role === "Salarié" || role === "Admin") extra.push({ id: "salaries", label: "Espace salariés", main: false });
+  if (hasRole("Coach") || hasRole("Admin")) extra.push({ id: "presence", label: "Présence", main: false });
+  if (hasRole("Admin")) extra.push({ id: "paiements", label: "Paiements", main: false });
+  if (hasRole("Salarié") || hasRole("Admin")) extra.push({ id: "salaries", label: "Espace salariés", main: false });
 
   // Un seul élément dans "Plus" -> inutile de le cacher derrière un clic, on l'affiche directement.
   if (extra.length === 1) {
@@ -1790,7 +1804,7 @@ function renderAverageCard(equipe, monthOnly) {
 }
 
 function renderHome() {
-  const canManage = session.role === "Coach" || session.role === "Admin";
+  const canManage = hasRole("Coach") || hasRole("Admin");
   let html = "";
 
   const nextEv = nextEvenement();
@@ -1828,7 +1842,7 @@ function renderHome() {
   // Stats compactes : caisse noire (SM1 uniquement, structure Grid figée) + présence perso
   // (tirée du roster réel de l'équipe, pas de la liste PLAYERS figée — sinon un joueur peut
   // avoir sa présence correcte sur la page Présence mais rien sur l'Accueil).
-  const inCaisseNoire = PLAYERS.map(p => p.trim()).includes((session.nom || "").trim()) && (session.equipe === "SM1" || session.role === "Admin");
+  const inCaisseNoire = PLAYERS.map(p => p.trim()).includes((session.nom || "").trim()) && (isInTeam("SM1") || hasRole("Admin"));
   const joueurIdentity = myJoueurIdentity();
   const inPresenceRoster = !!joueurIdentity && rosterForEquipe(joueurIdentity.equipe).includes(joueurIdentity.nom);
   if (inCaisseNoire || inPresenceRoster) {
@@ -1965,7 +1979,7 @@ function renderNextEventCard() {
     <div class="nc-countdown" style="margin-left:6px;">⚡ ${countdownLabel}</div>
     <div class="nc-title">${ev[4] || "Événement"}</div>
     <div class="nc-meta">${formatEventDateFr(ev)} ${ev[2] ? "· " + formatHeure(ev) : ""} ${ev[5] ? "· " + ev[5] : ""}</div>
-    ${session.role !== "Bénévole" ? `<div class="nc-actions">
+    ${!hasRole("Bénévole") ? `<div class="nc-actions">
       <button class="btn ${val === 'Oui' ? '' : 'secondary'}" data-event-presence="${id}" data-event-val="1">Présent</button>
       <button class="btn secondary" style="${val === 'Non' ? 'background:#b33;color:#fff;' : ''}" data-event-presence="${id}" data-event-val="0">Absent</button>
     </div>` : ""}
@@ -2003,10 +2017,10 @@ function renderGenerateTrainingsForm(equipe) {
 }
 
 function renderAgenda() {
-  const isSalarie = session.role === "Salarié";
-  const canManage = session.role === "Coach" || session.role === "Admin" || isSalarie;
+  const isSalarie = hasRole("Salarié");
+  const canManage = hasRole("Coach") || hasRole("Admin") || isSalarie;
   const switcherTeams = isSalarie ? [] : equipesForSwitcher();
-  const defaultTeam = isSalarie ? "Toutes" : (session.role === "Admin" ? (switcherTeams[0] || "SM1") : (session.equipe || "SM1"));
+  const defaultTeam = isSalarie ? "Toutes" : (hasRole("Admin") ? (switcherTeams[0] || "SM1") : (primaryEquipe()));
   const activeTeam = isSalarie ? "Toutes" : ((window.__agendaTeamView && switcherTeams.includes(window.__agendaTeamView)) ? window.__agendaTeamView : defaultTeam);
   const equipeLabel = activeTeam === "Toutes" ? "du club (repas, soirées, événements communs)" : `de l'équipe ${activeTeam}`;
   let html = `<div class="page-title">Agenda</div><div class="page-sub">Matchs, entraînements et événements ${equipeLabel}.</div>`;
@@ -2040,7 +2054,7 @@ function renderAgenda() {
         `}
         <label class="field-label">Lieu</label>
         <input id="ev-lieu" type="text" value="Lustucru Arena" />
-        ${(session.role === "Admin") ? `<label class="field-label">Équipe</label>
+        ${(hasRole("Admin")) ? `<label class="field-label">Équipe</label>
         <select id="ev-equipe">
           ${TEAMS.map(t => `<option value="${t}" ${activeTeam === t ? "selected" : ""}>${t}</option>`).join("")}
           <option value="Toutes" ${activeTeam === "Toutes" ? "selected" : ""}>Toutes (club entier)</option>
@@ -2052,7 +2066,7 @@ function renderAgenda() {
 
   html += renderTeamSwitcher(switcherTeams, activeTeam, "agenda-team");
 
-  if (session.role === "Admin" && activeTeam !== "Toutes") {
+  if (hasRole("Admin") && activeTeam !== "Toutes") {
     html += `<button class="add-toggle" id="toggle-generate-trainings" style="border-style:solid; color:#7a8aad;">📅 ${window.__showGenerateTrainings ? "− Fermer" : "Générer les entraînements (mar/jeu)"}</button>`;
     if (window.__showGenerateTrainings) html += renderGenerateTrainingsForm(activeTeam);
   }
@@ -2138,7 +2152,7 @@ function renderEventCard(ev, canManage, isPast) {
       <input id="edit-ev-titre-${id}" type="text" value="${titre || ''}" />
       <label class="field-label">Lieu</label>
       <input id="edit-ev-lieu-${id}" type="text" value="${lieu || ''}" />
-      ${(session.role === "Admin" || session.role === "Salarié") ? `<label class="field-label">Équipe</label>
+      ${(hasRole("Admin") || hasRole("Salarié")) ? `<label class="field-label">Équipe</label>
       <select id="edit-ev-equipe-${id}">
         ${TEAMS.map(t => `<option value="${t}" ${(equipe || "SM1") === t ? "selected" : ""}>${t}</option>`).join("")}
         <option value="Toutes" ${equipe === "Toutes" ? "selected" : ""}>Toutes (club entier)</option>
@@ -2175,7 +2189,7 @@ function renderEventCard(ev, canManage, isPast) {
       </div>
       <div class="ev-date-full">${dateFr}${heureFmt ? " · " + heureFmt : ""}</div>
       <div class="ev-meta">${lieu || ""}${canManage ? (lieu ? " · " : "") + presentCount + " présents / " + absentCount + " absents" : ""}</div>
-      ${(!isPast && session.role !== "Bénévole") ? `<div class="toggle-group" style="margin-top:8px;">
+      ${(!isPast && !hasRole("Bénévole")) ? `<div class="toggle-group" style="margin-top:8px;">
         <button class="toggle-btn ${val === 'Oui' ? 'present' : ''}" data-event-presence="${id}" data-event-val="1">Présent</button>
         <button class="toggle-btn ${val === 'Non' ? 'absent' : ''}" data-event-presence="${id}" data-event-val="0">Absent</button>
       </div>
@@ -2235,7 +2249,7 @@ function renderCaisseNoireSummary() {
     html += renderQuickAddForm();
   }
 
-  const isAdmin = session.role === "Admin";
+  const isAdmin = hasRole("Admin");
   const FROZEN_ACTIONS = ["participation mensuelle"];
 
   const renderPlayerCard = (p) => {
@@ -2368,7 +2382,8 @@ function renderDetailTable() {
 
 function renderPresencePage() {
   const switcherTeams = equipesForSwitcher().filter(t => t !== "Toutes"); // pas de vue "toutes" pour la présence (roster par équipe)
-  const defaultTeam = switcherTeams.includes(session.equipe) ? session.equipe : (switcherTeams[0] || "SM1");
+  const preferredTeam = equipesForRole("Coach")[0] || primaryEquipe();
+  const defaultTeam = switcherTeams.includes(preferredTeam) ? preferredTeam : (switcherTeams[0] || "SM1");
   const activeTeam = (window.__presenceTeamView && switcherTeams.includes(window.__presenceTeamView)) ? window.__presenceTeamView : defaultTeam;
 
   const sorted = sortedEvenements().filter(ev => eventEquipe(ev) === activeTeam);
@@ -2628,13 +2643,13 @@ function renderProfilPage() {
   const postes = currentPostes();
   const nomComplet = myRow ? (myRow[6] || "") : "";
   const photoUrl = myRow ? (myRow[7] || "") : "";
-  const canEditPoste = session.role === "Joueur" || session.role === "Coach" || session.role === "Admin";
+  const canEditPoste = hasRole("Joueur") || hasRole("Coach") || hasRole("Admin");
 
   const linkedRoles = new Set(linkedRows.map(r => r[1]));
   const canViewJoueur = linkedRoles.has("Joueur");
   const canViewCoach = linkedRoles.has("Coach");
   const showVueToggle = canViewJoueur && canViewCoach;
-  const defaultVue = session.role === "Coach" ? "coach" : "joueur";
+  const defaultVue = hasRole("Coach") ? "coach" : "joueur";
   const vue = showVueToggle
     ? ((window.__profilVue === "coach" || window.__profilVue === "joueur") ? window.__profilVue : defaultVue)
     : (canViewCoach && !canViewJoueur ? "coach" : "joueur");
@@ -2676,7 +2691,8 @@ function renderProfilPage() {
   if (vue === "coach") {
     const coachRows = linkedRows.filter(r => r[1] === "Coach");
     const coachTeams = [...new Set(coachRows.map(r => r[3] || "SM1"))];
-    const defaultCoachTeam = coachTeams.includes(session.equipe) ? session.equipe : (coachTeams[0] || "SM1");
+    const preferredCoachTeam = equipesForRole("Coach")[0] || primaryEquipe();
+    const defaultCoachTeam = coachTeams.includes(preferredCoachTeam) ? preferredCoachTeam : (coachTeams[0] || "SM1");
     const chosenCoachTeam = (window.__profilCoachTeamView && coachTeams.includes(window.__profilCoachTeamView)) ? window.__profilCoachTeamView : defaultCoachTeam;
     const coachRowForTeam = coachRows.find(r => (r[3] || "SM1") === chosenCoachTeam) || coachRows[0];
     const coachNomForTeam = coachRowForTeam ? coachRowForTeam[0] : session.nom;
@@ -2704,9 +2720,9 @@ function renderProfilPage() {
     </div>`;
   } else {
     const joueurRow = linkedRows.find(r => r[1] === "Joueur");
-    const isJoueur = !!joueurRow || session.role === "Joueur";
+    const isJoueur = !!joueurRow || hasRole("Joueur");
     const joueurNom = joueurRow ? joueurRow[0] : session.nom;
-    const joueurEquipe = joueurRow ? (joueurRow[3] || "SM1") : (session.equipe || "SM1");
+    const joueurEquipe = joueurRow ? (joueurRow[3] || "SM1") : (primaryEquipe());
     html += renderPtypeCard("Présence par type", computePresenceByType(joueurNom, joueurEquipe));
     if (isJoueur) html += renderStatsRecapCard(postes);
   }
@@ -2718,25 +2734,25 @@ const ACTU_SCOPES = ["Générale", ...TEAMS];
 
 function visibleActualites() {
   let list = actualites;
-  if (session.role !== "Admin" && session.role !== "Salarié") {
-    list = list.filter(a => a[2] === "Générale" || a[2] === (session.equipe || "SM1"));
+  if (!hasRole("Admin") && !hasRole("Salarié")) {
+    list = list.filter(a => a[2] === "Générale" || a[2] === (primaryEquipe()));
   }
   return list.slice().sort((a, b) => String(b[5] || "").localeCompare(String(a[5] || "")));
 }
 
 function scopesForActuCreation() {
-  if (session.role === "Admin") return ACTU_SCOPES;
-  if (session.role === "Coach") return [session.equipe || "SM1"];
+  if (hasRole("Admin")) return ACTU_SCOPES;
+  if (hasRole("Coach")) return equipesForRole("Coach").length ? equipesForRole("Coach") : [primaryEquipe()];
   return [];
 }
 
 function actuFilterOptions() {
-  if (session.role === "Admin" || session.role === "Salarié") return ["Générale", ...TEAMS];
-  return ["Générale", session.equipe || "SM1"];
+  if (hasRole("Admin") || hasRole("Salarié")) return ["Générale", ...TEAMS];
+  return ["Générale", primaryEquipe()];
 }
 
 function renderActualitesPage() {
-  const canCreate = session.role === "Coach" || session.role === "Admin";
+  const canCreate = hasRole("Coach") || hasRole("Admin");
   const creatableScopes = scopesForActuCreation();
   let html = `<div class="page-title">Actualités</div><div class="page-sub">Annonces du club et des équipes.</div>`;
 
@@ -2768,10 +2784,10 @@ function renderActualitesPage() {
   if (list.length === 0) {
     html += `<div class="card muted">Aucune actualité pour le moment.</div>`;
   } else {
-    const canManageAny = session.role === "Admin";
+    const canManageAny = hasRole("Admin");
     list.forEach(a => {
       const [id, titre, scope, texte, auteur, date] = a;
-      const canDelete = canManageAny || (session.role === "Coach" && scope === (session.equipe || "SM1"));
+      const canDelete = canManageAny || (hasRole("Coach") && equipesForRole("Coach").includes(scope));
       const dateLabel = date ? String(date).slice(0, 10).split("-").reverse().join("/") : "";
       html += `<div class="news-card">
         <div class="row-flex" style="align-items:flex-start; justify-content:space-between;">
@@ -2798,7 +2814,7 @@ function salariesFileIconPath(type) {
 }
 
 function renderSalariesPage() {
-  const canManage = session.role === "Salarié" || session.role === "Admin";
+  const canManage = hasRole("Salarié") || hasRole("Admin");
   let html = `<div class="page-title">Espace salariés</div><div class="page-sub">Documents, vidéos et liens du club.</div>`;
 
   if (!salariesState.loaded && !salariesState.loading && !salariesState.error) {
@@ -3437,7 +3453,7 @@ function attachEvents() {
     }
     const lieu = document.getElementById("ev-lieu").value;
     const equipeSelect = document.getElementById("ev-equipe");
-    const equipe = session.role === "Salarié" ? "Toutes" : (equipeSelect ? equipeSelect.value : (session.equipe || "SM1"));
+    const equipe = hasRole("Salarié") ? "Toutes" : (equipeSelect ? equipeSelect.value : (primaryEquipe()));
     if (!date || !titre) { alert("Merci de renseigner au moins la date complète et le titre."); return; }
     addEvenementApi(date, heure, type, titre, lieu, equipe);
   };
