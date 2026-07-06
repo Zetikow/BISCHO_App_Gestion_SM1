@@ -506,6 +506,7 @@ function myScorencoTeams() {
     if ((r[1] === "Joueur" || r[1] === "Coach") && TEAMS.includes(r[3])) teams.add(r[3]);
   });
   if (teams.size === 0 && TEAMS.includes(session.equipe)) teams.add(session.equipe);
+  teams.add("SM1"); // équipe première du club : visible pour tout le monde, quelle que soit l'équipe
   return [...teams];
 }
 
@@ -527,7 +528,7 @@ const LOGO_DATA_URI = "icon-512.png";
 const SESSION_KEY = "caisse-noire-session"; // {nom, role, code, equipe}
 const APP_VERSION_KEY = "caisse-noire-app-version";
 const LAST_USER_KEY = "lustuzone-last-user"; // simple mémorisation du dernier nom connecté sur cet appareil (pas le code)
-const APP_VERSION = "2026-07-05-15"; // À incrémenter à chaque mise à jour déployée
+const APP_VERSION = "2026-07-06-01"; // À incrémenter à chaque mise à jour déployée
 const SEASON_START = new Date(2026, 8, 1);  // 1er septembre 2026
 const SEASON_END = new Date(2027, 5, 30);   // 30 juin 2027
 
@@ -649,7 +650,14 @@ async function fetchAll() {
 
 function startPolling() {
   fetchAll();
-  setInterval(fetchAll, 8000);
+  setInterval(() => {
+    if (document.visibilityState === "visible") fetchAll();
+  }, 10000);
+  // Dès qu'on revient sur l'appli (changement d'onglet, réveil du téléphone), on rafraîchit
+  // tout de suite plutôt que d'attendre le prochain cycle — évite la sensation de données figées.
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible" && session) fetchAll();
+  });
 }
 
 async function writeCell(player, actionIndex, value) {
@@ -809,13 +817,43 @@ async function salariesUploadFileApi(parentId, filename, mimeType, base64) {
     await fetch(GOOGLE_SCRIPT_URL, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body });
     window.__showSalariesAdd = false;
     window.__salariesUploading = false;
+    window.__salariesUploadStage = null;
     invalidateSalariesCache(parentId);
     await fetchSalariesFolder(parentId);
   } catch (err) {
     isOnline = false;
     window.__salariesUploading = false;
+    window.__salariesUploadStage = null;
     render();
   }
+}
+
+// Réduit une photo prise depuis un téléphone (souvent plusieurs Mo) à une taille raisonnable
+// avant envoi — c'est ce qui évite la sensation de "chargement dans le vide" lors de l'upload :
+// sans ça, une photo de 5-8 Mo doit être encodée en base64 (+33% de taille) puis transmise
+// intégralement au script, ce qui peut prendre un long moment sur une connexion mobile.
+function compressImageFile(file, maxDim = 1600, quality = 0.82) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      let { width, height } = img;
+      if (width > maxDim || height > maxDim) {
+        if (width > height) { height = Math.round(height * maxDim / width); width = maxDim; }
+        else { width = Math.round(width * maxDim / height); height = maxDim; }
+      }
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      canvas.getContext("2d").drawImage(img, 0, 0, width, height);
+      URL.revokeObjectURL(url);
+      canvas.toBlob(blob => {
+        if (blob) resolve(blob); else reject(new Error("compression_failed"));
+      }, "image/jpeg", quality);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("image_load_failed")); };
+    img.src = url;
+  });
 }
 
 async function salariesDeleteApi(id, type, parentId) {
@@ -1473,13 +1511,12 @@ function attachLoginEvents() {
     loginPrefilledFromMemory = false;
     loginError = "";
     const allNoms = loginNoms ? loginNoms.map(c => c.nom) : [...PLAYERS, "Coach", "Admin", "Bénévole"];
+    // Important : ne JAMAIS appeler render() pendant la frappe — ça détruirait et recréerait
+    // le champ à chaque lettre, ce qui casse le clavier virtuel sur mobile (effet "lettre par
+    // lettre"). On ne redessine que si le nom tapé correspond exactement à un compte connu.
     if (allNoms.includes(val)) {
       loginNeedsSetup = null;
-      render();
       checkAccountStatus(val);
-    } else {
-      loginNeedsSetup = null;
-      render();
     }
   };
 
@@ -2478,7 +2515,7 @@ function renderSalariesPage() {
           <label class="field-label">Fichier (image ou document)</label>
           <input id="salaries-file-input" type="file" accept="image/*,.pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx" style="width:100%; color:#c3ccde; font-size:11px;" />
           <div class="profil-photo-note" style="text-align:left; margin-top:8px;">Vidéos et gros fichiers : dépose-les directement dans ce dossier depuis l'appli Google Drive — ils apparaîtront ici automatiquement.</div>
-          <button class="btn" id="submit-salaries-file" style="margin-top:8px;" ${window.__salariesUploading ? "disabled" : ""}>${window.__salariesUploading ? "Envoi en cours..." : "Envoyer"}</button>
+          <button class="btn" id="submit-salaries-file" style="margin-top:8px;" ${window.__salariesUploading ? "disabled" : ""}>${window.__salariesUploading ? (window.__salariesUploadStage || "Envoi en cours...") : "Envoyer"}</button>
         ` : ""}
         ${type === 'lien' ? `
           <label class="field-label">Titre</label>
@@ -2822,7 +2859,7 @@ function attachEvents() {
   };
 
   const submitSalariesFile = document.getElementById("submit-salaries-file");
-  if (submitSalariesFile) submitSalariesFile.onclick = () => {
+  if (submitSalariesFile) submitSalariesFile.onclick = async () => {
     const input = document.getElementById("salaries-file-input");
     const file = input && input.files && input.files[0];
     if (!file) { alert("Choisis un fichier."); return; }
@@ -2831,14 +2868,37 @@ function attachEvents() {
       return;
     }
     window.__salariesUploading = true;
+    window.__salariesUploadStage = "Préparation...";
     render();
+
+    let uploadBlob = file;
+    let uploadName = file.name;
+    let uploadType = file.type || "application/octet-stream";
+
+    // Les photos de téléphone (souvent 3-8 Mo) sont compressées avant envoi — nettement plus
+    // rapide et fiable que d'envoyer le fichier original tel quel.
+    if (uploadType.indexOf("image/") === 0 && file.size > 400 * 1024) {
+      window.__salariesUploadStage = "Compression de l'image...";
+      render();
+      try {
+        uploadBlob = await compressImageFile(file);
+        uploadType = "image/jpeg";
+        uploadName = file.name.replace(/\.[^.]+$/, "") + ".jpg";
+      } catch (err) {
+        uploadBlob = file; // repli sur le fichier original si la compression échoue
+      }
+    }
+
+    window.__salariesUploadStage = "Envoi en cours...";
+    render();
+
     const reader = new FileReader();
     reader.onload = () => {
       const base64 = reader.result.split(",")[1];
       const parentId = salariesState.currentFolder ? salariesState.currentFolder.id : null;
-      salariesUploadFileApi(parentId, file.name, file.type || "application/octet-stream", base64);
+      salariesUploadFileApi(parentId, uploadName, uploadType, base64);
     };
-    reader.readAsDataURL(file);
+    reader.readAsDataURL(uploadBlob);
   };
 
   document.querySelectorAll("[data-salaries-goto]").forEach(el => {
@@ -3311,7 +3371,15 @@ render();
 if (session) startPolling();
 else {
   fetchLoginNoms();
-  if (loginSelectedNom) checkAccountStatus(loginSelectedNom);
+  // Un utilisateur déjà mémorisé sur cet appareil a forcément déjà défini son code par le
+  // passé : pas besoin d'attendre un aller-retour serveur pour savoir s'il faut lui montrer
+  // le champ code — on l'affiche tout de suite, ce qui accélère nettement l'écran de connexion.
+  if (loginSelectedNom && loginPrefilledFromMemory) {
+    loginNeedsSetup = false;
+    render();
+  } else if (loginSelectedNom) {
+    checkAccountStatus(loginSelectedNom);
+  }
 }
 </script>
 </body>
