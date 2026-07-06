@@ -453,20 +453,30 @@ function syncOneSignalLogin() {
       if (session && session.nom) {
         await OneSignal.login(session.nom);
         await OneSignal.Notifications.requestPermission();
-        // L'alias externalId de OneSignal.login() n'est pas toujours fiable pour cibler
-        // l'envoi (problème connu chez eux) — on récupère et enregistre en plus l'identifiant
-        // technique réel de l'abonnement de cet appareil, bien plus fiable pour l'envoi ciblé.
-        const existingId = OneSignal.User.PushSubscription.id;
-        if (existingId) {
-          savePushSubscriptionId(existingId);
-        } else {
-          OneSignal.User.PushSubscription.addEventListener("change", (event) => {
-            if (event && event.current && event.current.id) savePushSubscriptionId(event.current.id);
-          });
-        }
+        attemptCapturePushSubId(OneSignal, 0);
       }
-    } catch (err) { /* navigateur non compatible ou refus — sans gravité */ }
+    } catch (err) {
+      window.__pushDebug = "Erreur OneSignal : " + err;
+      render();
+    }
   });
+}
+
+function attemptCapturePushSubId(OneSignal, tries) {
+  let id = null;
+  try { id = OneSignal.User.PushSubscription.id; } catch (err) { /* champ pas encore prêt */ }
+  window.__pushDebug = `Tentative ${tries + 1}/6 — id détecté : ${id || "aucun"}`;
+  render();
+  if (id) {
+    savePushSubscriptionId(id);
+    window.__pushDebug = "Identifiant enregistré : " + id;
+    render();
+  } else if (tries < 5) {
+    setTimeout(() => attemptCapturePushSubId(OneSignal, tries + 1), 1200);
+  } else {
+    window.__pushDebug = "Aucun identifiant détecté après plusieurs tentatives. Optin OneSignal : " + (OneSignal.User.PushSubscription.optedIn === true ? "oui" : "non/inconnu");
+    render();
+  }
 }
 
 async function savePushSubscriptionId(subId) {
@@ -691,7 +701,7 @@ const LOGO_DATA_URI = "icon-512.png";
 const SESSION_KEY = "caisse-noire-session"; // {nom, role, code, equipe}
 const APP_VERSION_KEY = "caisse-noire-app-version";
 const LAST_USER_KEY = "lustuzone-last-user"; // simple mémorisation du dernier nom connecté sur cet appareil (pas le code)
-const APP_VERSION = "2026-07-06-11"; // À incrémenter à chaque mise à jour déployée
+const APP_VERSION = "2026-07-06-12"; // À incrémenter à chaque mise à jour déployée
 const SEASON_START = new Date(2026, 8, 1);  // 1er septembre 2026
 const SEASON_END = new Date(2027, 5, 30);   // 30 juin 2027
 
@@ -2554,7 +2564,8 @@ function renderPushNotifCard() {
     statusHtml = `<div style="display:flex; align-items:center; gap:8px; padding:8px 10px; background:rgba(51,209,122,0.15); border-radius:9px; margin-bottom:8px;">
       <span style="font-size:16px;">✅</span>
       <span style="font-size:11px; color:#33d17a; font-weight:700;">Notifications activées sur cet appareil</span>
-    </div>`;
+    </div>
+    ${window.__pushDebug ? `<div class="muted" style="font-size:9.5px; margin-bottom:8px;">${escapeHtml(window.__pushDebug)}</div>` : ""}`;
     showButton = false;
   } else if (perm === "denied") {
     statusHtml = `<div style="display:flex; align-items:center; gap:8px; padding:8px 10px; background:rgba(255,107,107,0.15); border-radius:9px; margin-bottom:8px;">
@@ -2573,6 +2584,7 @@ function renderPushNotifCard() {
     <div class="section-h">Notifications push</div>
     ${statusHtml}
     ${showButton ? `<button class="btn" id="activer-push-btn">🔔 Activer les notifications</button>` : ""}
+    ${(perm === "granted") ? `<button class="btn secondary" id="resync-push-btn" style="margin-top:6px;">↻ Resynchroniser</button>` : ""}
   </div>`;
 }
 
@@ -3095,6 +3107,12 @@ function attachEvents() {
     if (!window.OneSignalDeferred) { alert("Les notifications ne sont pas disponibles sur ce navigateur."); return; }
     syncOneSignalLogin();
     setTimeout(render, 1200); // laisse le temps à la popup d'autorisation d'être traitée
+  };
+
+  const resyncPushBtn = document.getElementById("resync-push-btn");
+  if (resyncPushBtn) resyncPushBtn.onclick = () => {
+    if (!window.OneSignalDeferred) return;
+    syncOneSignalLogin();
   };
 
   const submitProfilEmail = document.getElementById("submit-profil-email");
