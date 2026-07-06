@@ -306,28 +306,33 @@
   .ldsdr:after { content: " "; display: block; width: 48px; height: 48px; margin: 6px; border-radius: 50%; border: 5px solid #1E457B; border-color: #1E457B transparent; animation: ldsdr 1.2s linear infinite; }
   @keyframes ldsdr { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
   .matchcard-wrap { position: relative; overflow: hidden; }
-  .matchcard { border-radius: 14px; padding: 12px 14px; margin-bottom: 10px; border: 1px solid rgba(255,255,255,0.08); background: #11141f; position: relative; overflow: hidden; }
+  .matchcard { border-radius: 16px; padding: 16px; margin-bottom: 12px; border: 1px solid rgba(255,255,255,0.08); background: #11141f; position: relative; overflow: hidden; }
   .matchcard:last-child { margin-bottom: 0; }
-  .matchcard.result.win { background: linear-gradient(135deg, rgba(51,209,122,0.16), rgba(51,209,122,0.03)); border-color: rgba(51,209,122,0.4); animation: victoryGlow 2.4s ease-in-out infinite; }
-  .matchcard.result.loss { background: linear-gradient(135deg, rgba(255,107,107,0.14), rgba(255,107,107,0.02)); border-color: rgba(255,107,107,0.35); }
-  .matchcard.result.draw { background: linear-gradient(135deg, rgba(154,166,196,0.12), rgba(154,166,196,0.02)); border-color: rgba(154,166,196,0.3); }
-  .matchcard.upcoming { background: linear-gradient(135deg, rgba(47,107,255,0.16), rgba(0,212,255,0.04)); border-color: rgba(0,212,255,0.4); }
+  .matchcard.result.win { background: linear-gradient(160deg, rgba(51,209,122,0.20), rgba(17,20,31,0.4)); border-color: rgba(51,209,122,0.45); animation: victoryGlow 2.4s ease-in-out infinite; }
+  .matchcard.result.loss { background: linear-gradient(160deg, rgba(255,107,107,0.16), rgba(17,20,31,0.4)); border-color: rgba(255,107,107,0.4); }
+  .matchcard.result.draw { background: linear-gradient(160deg, rgba(154,166,196,0.14), rgba(17,20,31,0.4)); border-color: rgba(154,166,196,0.3); }
+  .matchcard.upcoming { background: linear-gradient(160deg, rgba(47,107,255,0.20), rgba(17,20,31,0.4)); border-color: rgba(0,212,255,0.45); }
   @keyframes victoryGlow {
     0%, 100% { box-shadow: 0 0 0px rgba(51,209,122,0); }
-    50% { box-shadow: 0 0 18px rgba(51,209,122,0.35); }
+    50% { box-shadow: 0 0 22px rgba(51,209,122,0.4); }
   }
-  .matchcard-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-  .matchcard-date { font-size: 9.5px; font-weight: 800; color: #9db3e0; text-transform: uppercase; letter-spacing: 0.4px; }
-  .matchcard-venue { font-size: 9px; color: #5a6b8c; font-weight: 600; text-align: right; }
-  .matchcard-teams { display: flex; align-items: center; gap: 8px; }
-  .matchcard-team { flex: 1; font-size: 12.5px; font-weight: 700; color: #c3ccde; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .matchcard-team.us { color: #fff; font-weight: 900; }
-  .matchcard-score { flex-shrink: 0; font-size: 19px; font-weight: 900; color: #fff; letter-spacing: -0.5px; padding: 0 6px; }
-  .matchcard-score.win { color: #33d17a; }
-  .matchcard-score.loss { color: #ff6b6b; }
-  .matchcard-score.pending, .matchcard-score.upcoming { font-size: 13px; color: #7a8aad; }
-  .matchcard-dash { color: #5a6b8c; margin: 0 2px; font-weight: 700; }
-  .matchcard-badge { margin-top: 8px; font-size: 9.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.3px; text-align: center; padding: 5px; border-radius: 8px; }
+  .matchcard-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+  .matchcard-date { font-size: 10.5px; font-weight: 800; color: #9db3e0; text-transform: uppercase; letter-spacing: 0.5px; }
+  .matchcard-venue { font-size: 10px; color: #7a8aad; font-weight: 700; text-align: right; }
+  .matchcard-scoreboard { display: flex; align-items: flex-start; justify-content: space-between; gap: 6px; }
+  .matchcard-side { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+  .matchcard-avatar { width: 46px; height: 46px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 900; color: #9aa6c4; background: #1a1f30; border: 1px solid rgba(255,255,255,0.08); flex-shrink: 0; }
+  .matchcard-avatar.us { color: #fff; background: var(--grad); border-color: transparent; }
+  .matchcard-name { font-size: 12.5px; font-weight: 700; color: #9aa6c4; text-align: center; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .matchcard-name.us { color: #fff; font-weight: 900; }
+  .matchcard-center { flex-shrink: 0; display: flex; align-items: center; justify-content: center; padding-top: 6px; min-width: 74px; }
+  .matchcard-bigscore { font-size: 30px; font-weight: 900; color: #fff; letter-spacing: -1px; white-space: nowrap; }
+  .matchcard-bigscore.win { color: #33d17a; }
+  .matchcard-bigscore.loss { color: #ff6b6b; }
+  .matchcard-dash { color: rgba(255,255,255,0.35); margin: 0 3px; font-weight: 700; }
+  .matchcard-vsbadge { width: 46px; height: 46px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 900; color: #7a8aad; background: #1a1f30; border: 1px solid rgba(255,255,255,0.1); }
+  .matchcard-vsbadge.upcoming { color: #00d4ff; background: rgba(0,212,255,0.12); border-color: rgba(0,212,255,0.4); }
+  .matchcard-badge { margin-top: 14px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.4px; text-align: center; padding: 8px; border-radius: 10px; }
   .matchcard-badge.win { background: rgba(51,209,122,0.18); color: #33d17a; }
   .matchcard-badge.loss { background: rgba(255,107,107,0.15); color: #ff6b6b; }
   .matchcard-badge.pending { background: rgba(154,166,196,0.12); color: #9aa6c4; }
@@ -542,31 +547,43 @@ function renderResultsWidget(equipe) {
   </div>`;
 }
 
+function teamAvatarLabel(name) {
+  return (name || "?").trim().slice(0, 3).toUpperCase();
+}
+
 function renderMatchCard(ev, isPast) {
   const [, , heure, , titre, lieu, , score] = ev;
   const d = eventDateObj(ev);
   const dateLabel = d.toLocaleDateString("fr-FR", { day: "2-digit", month: "short" }).replace(".", "").toUpperCase();
   const m = formatMatchDisplay(titre, lieu);
-  const homeLabel = m.home || titre || "?";
-  const awayLabel = m.away || "";
   const showSplit = m.home !== null;
+  const homeName = showSplit ? m.home : (titre || "?");
+  const awayName = showSplit ? m.away : "";
+  const homeIsUs = m.home === "Bischo";
+  const awayIsUs = m.away === "Bischo";
+
+  const sideHtml = (name, isUs) => `<div class="matchcard-side">
+    <div class="matchcard-avatar ${isUs ? "us" : ""}">${escapeHtml(teamAvatarLabel(name))}</div>
+    <div class="matchcard-name ${isUs ? "us" : ""}">${escapeHtml(name)}</div>
+  </div>`;
 
   if (isPast && score) {
     const parts = String(score).split("-").map(n => parseInt(n, 10));
     let outcome = "draw", outcomeLabel = "Nul", outcomeIcon = "≡";
     if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
-      // Le score est toujours saisi "Bischo-Adverse" ; on le réaffiche du bon côté (domicile/extérieur).
       const bischoScore = parts[0], advScore = parts[1];
-      const leftScore = (m.home === "Bischo") ? bischoScore : advScore;
-      const rightScore = (m.home === "Bischo") ? advScore : bischoScore;
+      const leftScore = homeIsUs ? bischoScore : advScore;
+      const rightScore = homeIsUs ? advScore : bischoScore;
       if (bischoScore > advScore) { outcome = "win"; outcomeLabel = "Victoire"; outcomeIcon = "🏆"; }
       else if (bischoScore < advScore) { outcome = "loss"; outcomeLabel = "Défaite"; outcomeIcon = "💪"; }
       return `<div class="matchcard result ${outcome}">
         <div class="matchcard-top"><span class="matchcard-date">${dateLabel}</span><span class="matchcard-venue">${escapeHtml(lieu || "")}</span></div>
-        <div class="matchcard-teams">
-          <div class="matchcard-team ${m.home === 'Bischo' ? 'us' : ''}">${escapeHtml(showSplit ? m.home : homeLabel)}</div>
-          <div class="matchcard-score ${outcome}">${leftScore}<span class="matchcard-dash">-</span>${rightScore}</div>
-          <div class="matchcard-team ${m.away === 'Bischo' ? 'us' : ''}">${escapeHtml(showSplit ? m.away : "")}</div>
+        <div class="matchcard-scoreboard">
+          ${sideHtml(homeName, homeIsUs)}
+          <div class="matchcard-center">
+            <div class="matchcard-bigscore ${outcome}">${leftScore}<span class="matchcard-dash">−</span>${rightScore}</div>
+          </div>
+          ${sideHtml(awayName, awayIsUs)}
         </div>
         <div class="matchcard-badge ${outcome}">${outcomeIcon} ${outcomeLabel}</div>
       </div>`;
@@ -576,10 +593,10 @@ function renderMatchCard(ev, isPast) {
   if (isPast) {
     return `<div class="matchcard result">
       <div class="matchcard-top"><span class="matchcard-date">${dateLabel}</span><span class="matchcard-venue">${escapeHtml(lieu || "")}</span></div>
-      <div class="matchcard-teams">
-        <div class="matchcard-team ${m.home === 'Bischo' ? 'us' : ''}">${escapeHtml(showSplit ? m.home : homeLabel)}</div>
-        <div class="matchcard-score pending">VS</div>
-        <div class="matchcard-team ${m.away === 'Bischo' ? 'us' : ''}">${escapeHtml(showSplit ? m.away : "")}</div>
+      <div class="matchcard-scoreboard">
+        ${sideHtml(homeName, homeIsUs)}
+        <div class="matchcard-center"><div class="matchcard-vsbadge">VS</div></div>
+        ${sideHtml(awayName, awayIsUs)}
       </div>
       <div class="matchcard-badge pending">⏳ Score à venir</div>
     </div>`;
@@ -590,10 +607,10 @@ function renderMatchCard(ev, isPast) {
   const countdown = diffDays <= 0 ? "Aujourd'hui !" : diffDays === 1 ? "Demain !" : `Dans ${diffDays} jours`;
   return `<div class="matchcard upcoming">
     <div class="matchcard-top"><span class="matchcard-date">${dateLabel}</span><span class="matchcard-venue">${escapeHtml(lieu || "")}</span></div>
-    <div class="matchcard-teams">
-      <div class="matchcard-team ${m.home === 'Bischo' ? 'us' : ''}">${escapeHtml(showSplit ? m.home : homeLabel)}</div>
-      <div class="matchcard-score upcoming">VS</div>
-      <div class="matchcard-team ${m.away === 'Bischo' ? 'us' : ''}">${escapeHtml(showSplit ? m.away : "")}</div>
+    <div class="matchcard-scoreboard">
+      ${sideHtml(homeName, homeIsUs)}
+      <div class="matchcard-center"><div class="matchcard-vsbadge upcoming">VS</div></div>
+      ${sideHtml(awayName, awayIsUs)}
     </div>
     <div class="matchcard-badge upcoming">🔥 ${countdown} · ${formatHeure(ev) || ""}</div>
   </div>`;
@@ -632,7 +649,7 @@ const LOGO_DATA_URI = "icon-512.png";
 const SESSION_KEY = "caisse-noire-session"; // {nom, role, code, equipe}
 const APP_VERSION_KEY = "caisse-noire-app-version";
 const LAST_USER_KEY = "lustuzone-last-user"; // simple mémorisation du dernier nom connecté sur cet appareil (pas le code)
-const APP_VERSION = "2026-07-06-03"; // À incrémenter à chaque mise à jour déployée
+const APP_VERSION = "2026-07-06-04"; // À incrémenter à chaque mise à jour déployée
 const SEASON_START = new Date(2026, 8, 1);  // 1er septembre 2026
 const SEASON_END = new Date(2027, 5, 30);   // 30 juin 2027
 
