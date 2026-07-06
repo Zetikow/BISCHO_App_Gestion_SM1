@@ -450,9 +450,12 @@ function syncOneSignalLogin() {
   if (!ONESIGNAL_APP_ID || !window.OneSignalDeferred) return;
   window.OneSignalDeferred.push(async function (OneSignal) {
     try {
+      // Important pour Safari/iOS : la demande d'autorisation doit être le tout premier appel
+      // asynchrone après le clic, sinon Safari considère qu'elle ne vient plus d'un geste
+      // utilisateur direct et l'ignore silencieusement (contrairement à Chrome, plus tolérant).
+      await OneSignal.Notifications.requestPermission();
       if (session && session.nom) {
         await OneSignal.login(session.nom);
-        await OneSignal.Notifications.requestPermission();
         attemptCapturePushSubId(OneSignal, 0);
       }
     } catch (err) {
@@ -701,7 +704,7 @@ const LOGO_DATA_URI = "icon-512.png";
 const SESSION_KEY = "caisse-noire-session"; // {nom, role, code, equipe}
 const APP_VERSION_KEY = "caisse-noire-app-version";
 const LAST_USER_KEY = "lustuzone-last-user"; // simple mémorisation du dernier nom connecté sur cet appareil (pas le code)
-const APP_VERSION = "2026-07-06-12"; // À incrémenter à chaque mise à jour déployée
+const APP_VERSION = "2026-07-06-14"; // À incrémenter à chaque mise à jour déployée
 const SEASON_START = new Date(2026, 8, 1);  // 1er septembre 2026
 const SEASON_END = new Date(2027, 5, 30);   // 30 juin 2027
 
@@ -2558,6 +2561,11 @@ function renderStatsRecapCard(postes) {
 function renderPushNotifCard() {
   if (!ONESIGNAL_APP_ID) return "";
   const perm = (typeof Notification !== "undefined") ? Notification.permission : "unsupported";
+  const sdkQueued = !!window.OneSignalDeferred;
+  const sdkLoaded = !!window.OneSignal;
+  const sdkLine = sdkLoaded
+    ? `<div class="muted" style="font-size:9px; margin-bottom:8px;">Service de notifications : chargé ✓</div>`
+    : `<div class="muted" style="font-size:9px; margin-bottom:8px; color:#ffb43c;">Service de notifications : ${sdkQueued ? "pas encore chargé (patiente quelques secondes puis rafraîchis)" : "bloqué — vérifie qu'aucun bloqueur de publicités n'est actif sur ce site"}</div>`;
 
   let statusHtml, showButton = true;
   if (perm === "granted") {
@@ -2582,6 +2590,7 @@ function renderPushNotifCard() {
 
   return `<div class="card">
     <div class="section-h">Notifications push</div>
+    ${sdkLine}
     ${statusHtml}
     ${showButton ? `<button class="btn" id="activer-push-btn">🔔 Activer les notifications</button>` : ""}
     ${(perm === "granted") ? `<button class="btn secondary" id="resync-push-btn" style="margin-top:6px;">↻ Resynchroniser</button>` : ""}
