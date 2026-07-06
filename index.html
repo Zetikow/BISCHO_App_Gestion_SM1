@@ -672,7 +672,7 @@ const LOGO_DATA_URI = "icon-512.png";
 const SESSION_KEY = "caisse-noire-session"; // {nom, role, code, equipe}
 const APP_VERSION_KEY = "caisse-noire-app-version";
 const LAST_USER_KEY = "lustuzone-last-user"; // simple mémorisation du dernier nom connecté sur cet appareil (pas le code)
-const APP_VERSION = "2026-07-06-08"; // À incrémenter à chaque mise à jour déployée
+const APP_VERSION = "2026-07-06-09"; // À incrémenter à chaque mise à jour déployée
 const SEASON_START = new Date(2026, 8, 1);  // 1er septembre 2026
 const SEASON_END = new Date(2027, 5, 30);   // 30 juin 2027
 
@@ -2526,6 +2526,15 @@ function renderStatsRecapCard(postes) {
   </div>`;
 }
 
+function renderPushNotifCard() {
+  if (!ONESIGNAL_APP_ID) return "";
+  return `<div class="card">
+    <div class="section-h">Notifications push</div>
+    <div class="muted" style="font-size:10.5px; margin-bottom:8px; line-height:1.5;">Active les notifications pour recevoir les rappels de présence directement sur ton téléphone.</div>
+    <button class="btn" id="activer-push-btn">🔔 Activer les notifications</button>
+  </div>`;
+}
+
 function renderEmailCard(myRow) {
   const email = myRow ? (myRow[8] || "") : "";
   const editing = !!window.__profilEmailEditing;
@@ -2576,6 +2585,8 @@ function renderProfilPage() {
     <div class="profil-photo-frame">${photoUrl ? `<img src="${escapeHtml(photoUrl)}" alt="Photo de ${escapeHtml(session.nom)}"/>` : getInitials(session.nom)}</div>
     ${!photoUrl ? `<div class="profil-photo-note">Photo officielle à venir — ajoutée par l'Admin</div>` : ""}
   </div></div>`;
+
+  html += renderPushNotifCard();
 
   // Rôle dans le club + Poste, côte à côte
   html += `<div style="display:flex; gap:10px; align-items:stretch;">
@@ -3037,6 +3048,20 @@ function attachEvents() {
   document.querySelectorAll("[data-goto-profil-email]").forEach(el => {
     el.onclick = () => { vibrate(); currentPage = "profil"; render(); };
   });
+
+  const activerPushBtn = document.getElementById("activer-push-btn");
+  if (activerPushBtn) activerPushBtn.onclick = () => {
+    if (!window.OneSignalDeferred) { alert("Les notifications ne sont pas disponibles sur ce navigateur."); return; }
+    window.OneSignalDeferred.push(async function (OneSignal) {
+      try {
+        await OneSignal.login(session.nom);
+        await OneSignal.Notifications.requestPermission();
+        alert("Demande envoyée — regarde s'il y a une fenêtre d'autorisation à valider en haut de ton navigateur.");
+      } catch (err) {
+        alert("Erreur lors de l'activation des notifications.");
+      }
+    });
+  };
 
   const submitProfilEmail = document.getElementById("submit-profil-email");
   if (submitProfilEmail) submitProfilEmail.onclick = () => {
