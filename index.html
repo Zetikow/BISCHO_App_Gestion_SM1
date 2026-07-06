@@ -305,6 +305,14 @@
   .ldsdr { display: inline-block; width: 60px; height: 60px; }
   .ldsdr:after { content: " "; display: block; width: 48px; height: 48px; margin: 6px; border-radius: 50%; border: 5px solid #1E457B; border-color: #1E457B transparent; animation: ldsdr 1.2s linear infinite; }
   @keyframes ldsdr { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+  .match-row { display: flex; align-items: center; gap: 10px; padding: 9px 0; border-bottom: 1px solid rgba(255,255,255,0.06); }
+  .match-row:last-child { border-bottom: none; }
+  .match-date { font-size: 9px; color: #7a8aad; width: 50px; flex-shrink: 0; font-weight: 800; text-transform: uppercase; }
+  .match-teams { flex: 1; font-size: 12px; font-weight: 700; color: #e8e8ee; min-width: 0; }
+  .match-score { font-size: 14px; font-weight: 900; color: #fff; flex-shrink: 0; }
+  .match-score.win { color: #33d17a; }
+  .match-score.loss { color: #ff6b6b; }
+  .match-score.pending { font-size: 10.5px; font-weight: 700; color: #7a8aad; }
   @keyframes qaFadeIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
   .add-form input, .add-form select { margin-bottom: 6px; }
   .add-form .field-label { margin: 8px 0 4px; }
@@ -495,6 +503,47 @@ function ensureScorencoScript() {
   document.body.appendChild(s);
 }
 
+// Widget "maison" résultats & prochains matchs — utilise directement les événements de type
+// Match déjà présents dans l'Agenda (pas de dépendance externe, pas de pub, format fixe :
+// les 2 derniers résultats puis les 2 prochains matchs).
+function renderResultsWidget(equipe) {
+  const now = new Date();
+  const matches = evenements.filter(ev => typeClass(ev[3]) === "match" && (eventEquipe(ev) === equipe || eventEquipe(ev) === "Toutes"));
+  const past = matches.filter(ev => eventDateObj(ev) < now).sort((a, b) => eventDateObj(b) - eventDateObj(a)).slice(0, 2).reverse();
+  const upcoming = matches.filter(ev => eventDateObj(ev) >= now).sort((a, b) => eventDateObj(a) - eventDateObj(b)).slice(0, 2);
+  if (past.length === 0 && upcoming.length === 0) return "";
+
+  const rows = [...past.map(ev => renderResultRow(ev, true)), ...upcoming.map(ev => renderResultRow(ev, false))];
+  return `<div class="card">
+    <div class="section-h" style="margin-bottom:2px;">Résultats & prochains matchs — ${equipe}</div>
+    ${rows.join("")}
+  </div>`;
+}
+
+function renderResultRow(ev, isPast) {
+  const [, , heure, , titre, , , score] = ev;
+  const d = eventDateObj(ev);
+  const dateLabel = d.toLocaleDateString("fr-FR", { day: "2-digit", month: "short" }).replace(".", "").toUpperCase();
+  let right;
+  if (isPast && score) {
+    const parts = String(score).split("-").map(n => parseInt(n, 10));
+    let cls = "";
+    if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+      cls = parts[0] > parts[1] ? "win" : (parts[0] < parts[1] ? "loss" : "");
+    }
+    right = `<div class="match-score ${cls}">${escapeHtml(score)}</div>`;
+  } else if (isPast) {
+    right = `<div class="match-score pending">Score à venir</div>`;
+  } else {
+    right = `<div class="match-score pending">${formatHeure(ev) || ""}</div>`;
+  }
+  return `<div class="match-row">
+    <div class="match-date">${dateLabel}</div>
+    <div class="match-teams">${escapeHtml(titre || "")}</div>
+    ${right}
+  </div>`;
+}
+
 // Équipes (SM1/U17/SM2) où ce compte est Joueur ou Coach, en tenant compte des comptes liés
 // (même "Personne") pour les doubles casquettes — sert à savoir combien de cartes afficher.
 function myScorencoTeams() {
@@ -528,7 +577,7 @@ const LOGO_DATA_URI = "icon-512.png";
 const SESSION_KEY = "caisse-noire-session"; // {nom, role, code, equipe}
 const APP_VERSION_KEY = "caisse-noire-app-version";
 const LAST_USER_KEY = "lustuzone-last-user"; // simple mémorisation du dernier nom connecté sur cet appareil (pas le code)
-const APP_VERSION = "2026-07-06-01"; // À incrémenter à chaque mise à jour déployée
+const APP_VERSION = "2026-07-06-02"; // À incrémenter à chaque mise à jour déployée
 const SEASON_START = new Date(2026, 8, 1);  // 1er septembre 2026
 const SEASON_END = new Date(2027, 5, 30);   // 30 juin 2027
 
@@ -722,9 +771,11 @@ async function deleteEvenementApi(id) {
   } catch (err) { isOnline = false; render(); }
 }
 
-async function updateEvenementApi(id, date, heure, type, titre, lieu, equipe) {
+async function updateEvenementApi(id, date, heure, type, titre, lieu, equipe, score) {
   try {
-    await fetch(`${GOOGLE_SCRIPT_URL}?action=updateEvenement&id=${encodeURIComponent(id)}&date=${encodeURIComponent(date)}&heure=${encodeURIComponent(heure)}&type=${encodeURIComponent(type)}&titre=${encodeURIComponent(titre)}&lieu=${encodeURIComponent(lieu)}&equipe=${encodeURIComponent(equipe || "SM1")}&authNom=${encodeURIComponent(session.nom)}&authCode=${encodeURIComponent(session.code)}`);
+    const params = new URLSearchParams({ action: "updateEvenement", id, date, heure, type, titre, lieu, equipe: equipe || "SM1", authNom: session.nom, authCode: session.code });
+    if (score !== undefined) params.set("score", score);
+    await fetch(`${GOOGLE_SCRIPT_URL}?${params.toString()}`);
     window.__editingEvenementId = null;
     await fetchAll();
   } catch (err) { isOnline = false; render(); }
@@ -1616,8 +1667,6 @@ function renderHome() {
     html += `<div class="page-title">Salut ${session.nom}</div><div class="page-sub">Aucun événement prévu pour le moment.</div>`;
   }
 
-  myScorencoTeams().forEach(t => { html += renderScorencoWidget(t); });
-
   html += renderNextEventCard();
 
   // Stats compactes : caisse noire (SM1 uniquement, structure Grid figée) + présence perso
@@ -1639,6 +1688,8 @@ function renderHome() {
       ${inPresenceRoster ? `<div class="stat"><div class="stat-bar"></div><div class="stat-label">Présence</div><div class="stat-value">${pctDisplay}</div><div class="stat-sub">${pctSub}</div></div>` : ""}
     </div>`;
   }
+
+  html += renderResultsWidget("SM1");
 
   const weekEvents = getCurrentWeekEvents().filter(ev => !nextEv || ev[0] !== nextEv[0]);
   html += `<div class="section-h">Cette semaine</div>`;
@@ -1873,7 +1924,7 @@ function renderJustifBlock(eventId) {
 }
 
 function renderEventCard(ev, canManage, isPast) {
-  const [id, date, heure, type, titre, lieu, equipe] = ev;
+  const [id, date, heure, type, titre, lieu, equipe, score] = ev;
   const d = eventDateObj(ev);
   const val = presenceEvenements[`${id}_${session.nom}`];
   let presentCount = 0, absentCount = 0;
@@ -1903,6 +1954,17 @@ function renderEventCard(ev, canManage, isPast) {
         ${TEAMS.map(t => `<option value="${t}" ${(equipe || "SM1") === t ? "selected" : ""}>${t}</option>`).join("")}
         <option value="Toutes" ${equipe === "Toutes" ? "selected" : ""}>Toutes (club entier)</option>
       </select>` : ""}
+      ${type === "Match" ? (() => {
+        const parts = (score || "").split("-");
+        const scoreUs = parts[0] || "";
+        const scoreThem = parts[1] || "";
+        return `<label class="field-label">Score final (une fois le match joué)</label>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <input id="edit-ev-score-us-${id}" type="number" min="0" placeholder="Bischo" value="${scoreUs}" style="flex:1; text-align:center;" />
+          <span class="muted">—</span>
+          <input id="edit-ev-score-them-${id}" type="number" min="0" placeholder="Adverse" value="${scoreThem}" style="flex:1; text-align:center;" />
+        </div>`;
+      })() : ""}
       <div class="row-flex" style="margin-top:10px;">
         <button class="btn" style="flex:1;" data-save-event="${id}">Enregistrer</button>
         <button class="btn secondary" style="flex:1;" data-cancel-edit-event="1">Annuler</button>
@@ -3096,7 +3158,13 @@ function attachEvents() {
       const existing = evenements.find(ev => ev[0] === id);
       const equipe = equipeSelect ? equipeSelect.value : (existing ? existing[6] : "SM1");
       if (!date || !titre) { alert("Merci de renseigner au moins la date complète et le titre."); return; }
-      updateEvenementApi(id, date, heure, type, titre, lieu, equipe);
+      let score;
+      const scoreUsInput = document.getElementById(`edit-ev-score-us-${id}`);
+      const scoreThemInput = document.getElementById(`edit-ev-score-them-${id}`);
+      if (scoreUsInput && scoreThemInput) {
+        score = (scoreUsInput.value !== "" && scoreThemInput.value !== "") ? `${scoreUsInput.value}-${scoreThemInput.value}` : "";
+      }
+      updateEvenementApi(id, date, heure, type, titre, lieu, equipe, score);
     };
   });
 
