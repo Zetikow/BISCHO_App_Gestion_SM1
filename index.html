@@ -306,7 +306,7 @@
   .ldsdr:after { content: " "; display: block; width: 48px; height: 48px; margin: 6px; border-radius: 50%; border: 5px solid #1E457B; border-color: #1E457B transparent; animation: ldsdr 1.2s linear infinite; }
   @keyframes ldsdr { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
   .matchcard-wrap { position: relative; overflow: hidden; }
-  .matchcard { border-radius: 16px; padding: 16px; margin-bottom: 12px; border: 1px solid rgba(255,255,255,0.08); background: #11141f; position: relative; overflow: hidden; }
+  .matchcard { border-radius: 14px; padding: 11px 13px; margin-bottom: 8px; border: 1px solid rgba(255,255,255,0.08); background: #11141f; position: relative; overflow: hidden; }
   .matchcard:last-child { margin-bottom: 0; }
   .matchcard.result.win { background: linear-gradient(160deg, rgba(51,209,122,0.20), rgba(17,20,31,0.4)); border-color: rgba(51,209,122,0.45); animation: victoryGlow 2.4s ease-in-out infinite; }
   .matchcard.result.loss { background: linear-gradient(160deg, rgba(255,107,107,0.16), rgba(17,20,31,0.4)); border-color: rgba(255,107,107,0.4); }
@@ -314,25 +314,25 @@
   .matchcard.upcoming { background: linear-gradient(160deg, rgba(47,107,255,0.20), rgba(17,20,31,0.4)); border-color: rgba(0,212,255,0.45); }
   @keyframes victoryGlow {
     0%, 100% { box-shadow: 0 0 0px rgba(51,209,122,0); }
-    50% { box-shadow: 0 0 22px rgba(51,209,122,0.4); }
+    50% { box-shadow: 0 0 16px rgba(51,209,122,0.35); }
   }
-  .matchcard-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
-  .matchcard-date { font-size: 10.5px; font-weight: 800; color: #9db3e0; text-transform: uppercase; letter-spacing: 0.5px; }
-  .matchcard-venue { font-size: 10px; color: #7a8aad; font-weight: 700; text-align: right; }
-  .matchcard-scoreboard { display: flex; align-items: flex-start; justify-content: space-between; gap: 6px; }
-  .matchcard-side { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 8px; }
-  .matchcard-avatar { width: 46px; height: 46px; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 900; color: #9aa6c4; background: #1a1f30; border: 1px solid rgba(255,255,255,0.08); flex-shrink: 0; }
+  .matchcard-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .matchcard-date { font-size: 9.5px; font-weight: 800; color: #9db3e0; text-transform: uppercase; letter-spacing: 0.5px; }
+  .matchcard-venue { font-size: 9px; color: #7a8aad; font-weight: 700; text-align: right; }
+  .matchcard-scoreboard { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+  .matchcard-side { flex: 1; min-width: 0; display: flex; flex-direction: row; align-items: center; justify-content: center; gap: 7px; }
+  .matchcard-avatar { width: 32px; height: 32px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 10.5px; font-weight: 900; color: #9aa6c4; background: #1a1f30; border: 1px solid rgba(255,255,255,0.08); flex-shrink: 0; }
   .matchcard-avatar.us { color: #fff; background: var(--grad); border-color: transparent; }
-  .matchcard-name { font-size: 12.5px; font-weight: 700; color: #9aa6c4; text-align: center; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .matchcard-name { font-size: 12px; font-weight: 700; color: #9aa6c4; text-align: left; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .matchcard-name.us { color: #fff; font-weight: 900; }
-  .matchcard-center { flex-shrink: 0; display: flex; align-items: center; justify-content: center; padding-top: 6px; min-width: 74px; }
-  .matchcard-bigscore { font-size: 30px; font-weight: 900; color: #fff; letter-spacing: -1px; white-space: nowrap; }
+  .matchcard-center { flex-shrink: 0; display: flex; align-items: center; justify-content: center; min-width: 56px; }
+  .matchcard-bigscore { font-size: 22px; font-weight: 900; color: #fff; letter-spacing: -1px; white-space: nowrap; }
   .matchcard-bigscore.win { color: #33d17a; }
   .matchcard-bigscore.loss { color: #ff6b6b; }
-  .matchcard-dash { color: rgba(255,255,255,0.35); margin: 0 3px; font-weight: 700; }
-  .matchcard-vsbadge { width: 46px; height: 46px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 900; color: #7a8aad; background: #1a1f30; border: 1px solid rgba(255,255,255,0.1); }
+  .matchcard-dash { color: rgba(255,255,255,0.35); margin: 0 2px; font-weight: 700; }
+  .matchcard-vsbadge { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 9.5px; font-weight: 900; color: #7a8aad; background: #1a1f30; border: 1px solid rgba(255,255,255,0.1); }
   .matchcard-vsbadge.upcoming { color: #00d4ff; background: rgba(0,212,255,0.12); border-color: rgba(0,212,255,0.4); }
-  .matchcard-badge { margin-top: 14px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.4px; text-align: center; padding: 8px; border-radius: 10px; }
+  .matchcard-badge { margin-top: 8px; font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.4px; text-align: center; padding: 6px; border-radius: 8px; }
   .matchcard-badge.win { background: rgba(51,209,122,0.18); color: #33d17a; }
   .matchcard-badge.loss { background: rgba(255,107,107,0.15); color: #ff6b6b; }
   .matchcard-badge.pending { background: rgba(154,166,196,0.12); color: #9aa6c4; }
@@ -649,7 +649,7 @@ const LOGO_DATA_URI = "icon-512.png";
 const SESSION_KEY = "caisse-noire-session"; // {nom, role, code, equipe}
 const APP_VERSION_KEY = "caisse-noire-app-version";
 const LAST_USER_KEY = "lustuzone-last-user"; // simple mémorisation du dernier nom connecté sur cet appareil (pas le code)
-const APP_VERSION = "2026-07-06-04"; // À incrémenter à chaque mise à jour déployée
+const APP_VERSION = "2026-07-06-05"; // À incrémenter à chaque mise à jour déployée
 const SEASON_START = new Date(2026, 8, 1);  // 1er septembre 2026
 const SEASON_END = new Date(2027, 5, 30);   // 30 juin 2027
 
@@ -1930,6 +1930,8 @@ function renderAgenda() {
   if (canManage) {
     html += `<button class="btn add-btn-primary" id="toggle-add-event">${showAddEvent ? "− Fermer" : "+ Ajouter un événement"}</button>`;
     if (showAddEvent) {
+      const effectiveType = window.__addEventType || (isSalarie ? "Repas" : "Match");
+      const isMatchType = effectiveType === "Match";
       html += `<div class="add-form">
         <label class="field-label">Date</label>
         ${dateSelectHtml("ev-date", "")}
@@ -1937,14 +1939,21 @@ function renderAgenda() {
         ${heureSelectHtml("ev-heure", "")}
         <label class="field-label">Type</label>
         <select id="ev-type">
-          ${isSalarie ? "" : `<option value="Match">Match</option><option value="Entraînement">Entraînement</option>`}
-          <option value="Repas">Repas</option>
-          <option value="Soirée">Soirée</option>
-          <option value="Bénévole">Bénévole</option>
-          <option value="Autre">Autre</option>
+          ${isSalarie ? "" : `<option value="Match" ${effectiveType === "Match" ? "selected" : ""}>Match</option><option value="Entraînement" ${effectiveType === "Entraînement" ? "selected" : ""}>Entraînement</option>`}
+          <option value="Repas" ${effectiveType === "Repas" ? "selected" : ""}>Repas</option>
+          <option value="Soirée" ${effectiveType === "Soirée" ? "selected" : ""}>Soirée</option>
+          <option value="Bénévole" ${effectiveType === "Bénévole" ? "selected" : ""}>Bénévole</option>
+          <option value="Autre" ${effectiveType === "Autre" ? "selected" : ""}>Autre</option>
         </select>
+        ${isMatchType ? `
+        <label class="field-label">Équipe 1</label>
+        <input type="text" value="Bischo" disabled style="opacity:0.6;" />
+        <label class="field-label">Adversaire</label>
+        <input id="ev-adversaire" type="text" placeholder="ex: Illkirch" />
+        ` : `
         <label class="field-label">Titre</label>
-        <input id="ev-titre" type="text" placeholder="ex: Bischo vs Illkirch" />
+        <input id="ev-titre" type="text" placeholder="ex: Repas d'équipe" />
+        `}
         <label class="field-label">Lieu</label>
         <input id="ev-lieu" type="text" value="Lustucru Arena" />
         ${(session.role === "Admin") ? `<label class="field-label">Équipe</label>
@@ -3132,7 +3141,17 @@ function attachEvents() {
   });
 
   const toggleAddEvent = document.getElementById("toggle-add-event");
-  if (toggleAddEvent) toggleAddEvent.onclick = () => { showAddEvent = !showAddEvent; render(); };
+  if (toggleAddEvent) toggleAddEvent.onclick = () => {
+    showAddEvent = !showAddEvent;
+    window.__addEventType = null;
+    render();
+  };
+
+  const evTypeSelect = document.getElementById("ev-type");
+  if (evTypeSelect) evTypeSelect.onchange = (e) => {
+    window.__addEventType = e.target.value;
+    render();
+  };
 
   document.querySelectorAll("[data-agenda-team]").forEach(el => {
     el.onclick = () => {
@@ -3221,7 +3240,14 @@ function attachEvents() {
     const date = readDateSelect("ev-date");
     const heure = readHeureSelect("ev-heure");
     const type = document.getElementById("ev-type").value;
-    const titre = document.getElementById("ev-titre").value;
+    let titre;
+    if (type === "Match") {
+      const adversaire = (document.getElementById("ev-adversaire").value || "").trim();
+      if (!adversaire) { alert("Merci de renseigner l'adversaire."); return; }
+      titre = `Bischo vs ${adversaire}`;
+    } else {
+      titre = document.getElementById("ev-titre").value;
+    }
     const lieu = document.getElementById("ev-lieu").value;
     const equipeSelect = document.getElementById("ev-equipe");
     const equipe = session.role === "Salarié" ? "Toutes" : (equipeSelect ? equipeSelect.value : (session.equipe || "SM1"));
