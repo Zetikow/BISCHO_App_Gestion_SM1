@@ -344,25 +344,28 @@
   .photo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
   .photo-grid-item { aspect-ratio: 1; border-radius: 10px; overflow: hidden; display: block; background: #11141f; }
   .photo-grid-item img { width: 100%; height: 100%; object-fit: cover; display: block; }
-  .cp-match-card { background: #11141f; border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 13px; margin-bottom: 10px; }
-  .cp-match-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-  .cp-match-title { font-size: 12.5px; font-weight: 800; color: #fff; }
-  .cp-match-sub { font-size: 9.5px; color: #7a8aad; font-weight: 700; text-transform: uppercase; }
+  .cp-match-card { background: #11141f; border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 14px; margin-bottom: 10px; }
+  .cp-match-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; gap: 8px; }
+  .cp-match-title { font-size: 14.5px; font-weight: 800; color: #fff; }
+  .cp-match-sub { font-size: 11px; color: #9db3e0; font-weight: 700; text-transform: uppercase; }
+  .cp-summary-badge { flex-shrink: 0; text-align: center; background: rgba(47,107,255,0.15); border: 1px solid rgba(47,107,255,0.35); border-radius: 10px; padding: 6px 10px; }
+  .cp-summary-badge .num { font-size: 15px; font-weight: 900; color: #fff; line-height: 1.1; }
+  .cp-summary-badge .lbl { font-size: 8px; font-weight: 800; text-transform: uppercase; color: #9db3e0; letter-spacing: 0.3px; }
   .cp-cols { display: flex; gap: 8px; }
-  .cp-col { flex: 1; background: #0d1018; border-radius: 10px; padding: 8px; min-width: 0; }
-  .cp-col-h { font-size: 9px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 6px; }
+  .cp-col { flex: 1; background: #0d1018; border-radius: 10px; padding: 9px; min-width: 0; }
+  .cp-col-h { font-size: 10.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 7px; }
   .cp-col-h.driver { color: #33d17a; }
   .cp-col-h.need { color: #ffb43c; }
-  .cp-row { display: flex; justify-content: space-between; align-items: center; font-size: 10.5px; color: #e8e8ee; padding: 3px 0; }
-  .cp-row .places { color: #7a8aad; font-size: 9px; font-weight: 700; flex-shrink: 0; margin-left: 4px; }
-  .cp-empty { font-size: 9.5px; color: #5a6b8c; font-style: italic; }
-  .cp-edit-box { margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.08); }
-  .cp-edit-label { font-size: 9.5px; color: #9db3e0; font-weight: 700; text-transform: uppercase; margin-bottom: 6px; }
-  .cp-toggle-row { display: flex; gap: 8px; margin-bottom: 8px; }
-  .cp-toggle-btn { flex: 1; text-align: center; padding: 7px; border-radius: 8px; font-size: 10px; font-weight: 800; background: #1a1f30; color: #7a8aad; }
+  .cp-row { display: flex; justify-content: space-between; align-items: center; font-size: 12.5px; color: #e8e8ee; padding: 4px 0; }
+  .cp-row .places { color: #9db3e0; font-size: 10.5px; font-weight: 700; flex-shrink: 0; margin-left: 4px; }
+  .cp-empty { font-size: 11px; color: #7a8aad; font-style: italic; }
+  .cp-edit-box { margin-top: 11px; padding-top: 11px; border-top: 1px solid rgba(255,255,255,0.08); }
+  .cp-edit-label { font-size: 11px; color: #9db3e0; font-weight: 700; text-transform: uppercase; margin-bottom: 7px; }
+  .cp-toggle-row { display: flex; gap: 8px; margin-bottom: 9px; }
+  .cp-toggle-btn { flex: 1; text-align: center; padding: 9px; border-radius: 9px; font-size: 12px; font-weight: 800; background: #1a1f30; color: #9db3e0; }
   .cp-toggle-btn.active-yes { background: rgba(51,209,122,0.2); color: #33d17a; }
   .cp-toggle-btn.active-need { background: rgba(255,180,60,0.2); color: #ffb43c; }
-  .cp-for-child { font-size: 9px; background: rgba(47,107,255,0.18); color: #7fa8ff; padding: 2px 8px; border-radius: 6px; font-weight: 800; text-transform: uppercase; margin-left: 6px; }
+  .cp-for-child { font-size: 10px; background: rgba(47,107,255,0.18); color: #7fa8ff; padding: 3px 9px; border-radius: 6px; font-weight: 800; text-transform: uppercase; margin-left: 6px; }
   @keyframes qaFadeIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
   .add-form input, .add-form select { margin-bottom: 6px; }
   .add-form .field-label { margin: 8px 0 4px; }
@@ -835,7 +838,7 @@ const LOGO_DATA_URI = "icon-512.png";
 const SESSION_KEY = "caisse-noire-session"; // {nom, role, code, equipe}
 const APP_VERSION_KEY = "caisse-noire-app-version";
 const LAST_USER_KEY = "lustuzone-last-user"; // simple mémorisation du dernier nom connecté sur cet appareil (pas le code)
-const APP_VERSION = "2026-07-07-07"; // À incrémenter à chaque mise à jour déployée
+const APP_VERSION = "2026-07-07-08"; // À incrémenter à chaque mise à jour déployée
 const SEASON_START = new Date(2026, 8, 1);  // 1er septembre 2026
 const SEASON_END = new Date(2027, 5, 30);   // 30 juin 2027
 
@@ -2611,10 +2614,15 @@ function renderCovoiturageePage() {
     const entries = covoiturage.filter(r => r[0] === id);
     const drivers = entries.filter(r => r[2] === "Oui");
     const needers = entries.filter(r => r[4] === "Oui");
+    const totalPlaces = drivers.reduce((s, r) => s + (parseInt(r[3], 10) || 0), 0);
 
     html += `<div class="cp-match-card">
       <div class="cp-match-head">
         <div><div class="cp-match-title">${escapeHtml(titre || "Match")}</div><div class="cp-match-sub">${dateLabel} · ${formatHeure(ev) || ""} · ${escapeHtml(lieu || "")}</div></div>
+        <div style="display:flex; gap:6px;">
+          <div class="cp-summary-badge"><div class="num" style="color:#33d17a;">${totalPlaces}</div><div class="lbl">Places</div></div>
+          <div class="cp-summary-badge"><div class="num" style="color:#ffb43c;">${needers.length}</div><div class="lbl">Demandes</div></div>
+        </div>
       </div>
       <div class="cp-cols">
         <div class="cp-col">
