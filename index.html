@@ -694,12 +694,12 @@ const LOGO_DATA_URI = "icon-512.png";
 const SESSION_KEY = "caisse-noire-session"; // {nom, role, code, equipe}
 const APP_VERSION_KEY = "caisse-noire-app-version";
 const LAST_USER_KEY = "lustuzone-last-user"; // simple mémorisation du dernier nom connecté sur cet appareil (pas le code)
-const APP_VERSION = "2026-07-06-14"; // À incrémenter à chaque mise à jour déployée
+const APP_VERSION = "2026-07-07-01"; // À incrémenter à chaque mise à jour déployée
 const SEASON_START = new Date(2026, 8, 1);  // 1er septembre 2026
 const SEASON_END = new Date(2027, 5, 30);   // 30 juin 2027
 
 let grid = {};
-let comptes = []; // [[nom, role, code, equipe, personne, poste, nomComplet, photoUrl], ...] (+ header row)
+let comptes = []; // [[nom, code, roles, poste, nomComplet, photoUrl, email, pushSubIds], ...] (+ header row) — une ligne par personne
 let presences = {}; // { "YYYY-MM-DD_Nom": "1"/"0" }
 let paiements = []; // [[id, joueur, montant, date, commentaire], ...]
 let evenements = []; // [[id, date, heure, type, titre, lieu, equipe], ...]
@@ -1102,7 +1102,7 @@ async function writeJustificationApi(eventId, nom, texte) {
 
 async function setPosteApi(nom, poste) {
   const row = findCompteRow(nom);
-  if (row) row[5] = poste; // mise à jour optimiste locale
+  if (row) row[3] = poste; // mise à jour optimiste locale
   render();
   try {
     await fetch(`${GOOGLE_SCRIPT_URL}?action=setPoste&nom=${encodeURIComponent(nom)}&poste=${encodeURIComponent(poste)}&authNom=${encodeURIComponent(session.nom)}&authCode=${encodeURIComponent(session.code)}`);
@@ -1112,7 +1112,7 @@ async function setPosteApi(nom, poste) {
 
 async function setEmailApi(nom, email) {
   const row = findCompteRow(nom);
-  if (row) row[8] = email; // mise à jour optimiste locale
+  if (row) row[6] = email; // mise à jour optimiste locale
   window.__profilEmailEditing = false;
   render();
   try {
@@ -1411,8 +1411,8 @@ function sortedVisibleEvenements() {
   return getVisibleEvenements().slice().sort((a, b) => eventDateObj(a) - eventDateObj(b));
 }
 
-// Équipes qu'un compte peut consulter : la sienne, celles de ses comptes liés (même "Personne"
-// dans Comptes — ex: un joueur SM1 qui est aussi coach U17), et toutes pour l'Admin.
+// Équipes qu'un compte peut consulter : toutes celles de ses rôles cumulés (ex: un joueur
+// SM1 qui est aussi coach U17 voit les deux), et toutes pour l'Admin.
 function myAllowedEquipes() {
   if (hasRole("Admin")) return TEAMS.slice();
   const set = new Set((session.roles || []).map(r => r.equipe));
@@ -1427,7 +1427,7 @@ function equipesForSwitcher() {
 
 // Liste des joueurs d'une équipe donnée, à partir des comptes réels (plus de dépendance à PLAYERS).
 function rosterForEquipe(equipe) {
-  return comptes.slice(1).filter(c => c[1] === "Joueur" && (c[3] || "SM1") === equipe).map(c => c[0]);
+  return comptes.slice(1).filter(c => rowHasRole(c, "Joueur") && rowEquipesForRole(c, "Joueur").indexOf(equipe) !== -1).map(c => c[0]);
 }
 
 function sortedEventsForTeamView(equipeView) {
@@ -1825,7 +1825,7 @@ function renderHome() {
   // profit des notifications push. Repasser EMAIL_REMINDER_UI_VISIBLE à true pour le remontrer.
   if (EMAIL_REMINDER_UI_VISIBLE) {
     const myRowForEmail = findCompteRow(session.nom);
-    const myEmail = myRowForEmail ? (myRowForEmail[8] || "") : "";
+    const myEmail = myRowForEmail ? (myRowForEmail[6] || "") : "";
     if (!myEmail) {
       html += `<div class="card" style="border-color: rgba(255,180,60,0.4); background: linear-gradient(135deg, rgba(255,180,60,0.12), rgba(17,20,31,0.4));">
         <div style="display:flex; align-items:center; gap:10px;">
@@ -2473,6 +2473,24 @@ function renderPresenceEventCard(ev, isPast, activeTeam) {
 
 const POSTES = ["ALD", "ARD", "DC", "ARG", "ALG", "PV", "GB", "COACH"];
 
+// Schéma Comptes (une ligne par personne) : Nom(0), Code(1, jamais renvoyé par le serveur),
+// Roles(2, ex: "Joueur:SM1,Coach:U17,Admin:Toutes"), Poste(3), NomComplet(4), PhotoURL(5),
+// Email(6), PushSubIds(7). On lit toujours les rôles d'une ligne en cherchant dans sa cellule
+// "Roles", jamais via des colonnes séparées ou un regroupement par "Personne".
+function parseRoles(cell) {
+  return String(cell || "").split(",").map(s => s.trim()).filter(Boolean).map(pair => {
+    const idx = pair.indexOf(":");
+    if (idx === -1) return { role: pair, equipe: "SM1" };
+    return { role: pair.slice(0, idx).trim(), equipe: pair.slice(idx + 1).trim() || "SM1" };
+  });
+}
+function rowHasRole(row, roleName) {
+  return parseRoles(row[2]).some(r => r.role === roleName);
+}
+function rowEquipesForRole(row, roleName) {
+  return parseRoles(row[2]).filter(r => r.role === roleName).map(r => r.equipe);
+}
+
 function findCompteRow(nom) {
   return comptes.slice(1).find(c => c[0] === nom) || null;
 }
@@ -2510,7 +2528,7 @@ function renderPtypeCard(title, stats) {
 
 function currentPostes() {
   const row = findCompteRow(session.nom);
-  return row && row[5] ? String(row[5]).split(",").map(s => s.trim()).filter(Boolean) : [];
+  return row && row[3] ? String(row[3]).split(",").map(s => s.trim()).filter(Boolean) : [];
 }
 
 function renderPosteCard(postes, unwrapped) {
@@ -2613,7 +2631,7 @@ function renderPushNotifCard() {
 }
 
 function renderEmailCard(myRow) {
-  const email = myRow ? (myRow[8] || "") : "";
+  const email = myRow ? (myRow[6] || "") : "";
   const editing = !!window.__profilEmailEditing;
   if (!email || editing) {
     return `<div class="card">
@@ -2638,16 +2656,13 @@ function renderEmailCard(myRow) {
 
 function renderProfilPage() {
   const myRow = findCompteRow(session.nom);
-  const personne = myRow ? (myRow[4] || myRow[0]) : session.nom;
-  const linkedRows = comptes.slice(1).filter(c => (c[4] || c[0]) === personne);
   const postes = currentPostes();
-  const nomComplet = myRow ? (myRow[6] || "") : "";
-  const photoUrl = myRow ? (myRow[7] || "") : "";
+  const nomComplet = myRow ? (myRow[4] || "") : "";
+  const photoUrl = myRow ? (myRow[5] || "") : "";
   const canEditPoste = hasRole("Joueur") || hasRole("Coach") || hasRole("Admin");
 
-  const linkedRoles = new Set(linkedRows.map(r => r[1]));
-  const canViewJoueur = linkedRoles.has("Joueur");
-  const canViewCoach = linkedRoles.has("Coach");
+  const canViewJoueur = hasRole("Joueur");
+  const canViewCoach = hasRole("Coach");
   const showVueToggle = canViewJoueur && canViewCoach;
   const defaultVue = hasRole("Coach") ? "coach" : "joueur";
   const vue = showVueToggle
@@ -2670,9 +2685,9 @@ function renderProfilPage() {
     <div class="card" style="flex:1; min-width:0;">
       <div class="section-h">Rôle dans le club</div>
       <div style="display:flex; flex-wrap:wrap; gap:6px;">
-        ${linkedRows.map(r => {
-          const showTeam = r[1] === "Joueur" || r[1] === "Coach";
-          return `<span class="badge">${r[1]}${showTeam ? " " + (r[3] || "SM1") : ""}</span>`;
+        ${(session.roles || []).map(r => {
+          const showTeam = r.role === "Joueur" || r.role === "Coach";
+          return `<span class="badge">${r.role}${showTeam ? " " + (r.equipe || "SM1") : ""}</span>`;
         }).join("")}
       </div>
     </div>
@@ -2689,23 +2704,20 @@ function renderProfilPage() {
   }
 
   if (vue === "coach") {
-    const coachRows = linkedRows.filter(r => r[1] === "Coach");
-    const coachTeams = [...new Set(coachRows.map(r => r[3] || "SM1"))];
-    const preferredCoachTeam = equipesForRole("Coach")[0] || primaryEquipe();
+    const coachTeams = equipesForRole("Coach");
+    const preferredCoachTeam = coachTeams[0] || primaryEquipe();
     const defaultCoachTeam = coachTeams.includes(preferredCoachTeam) ? preferredCoachTeam : (coachTeams[0] || "SM1");
     const chosenCoachTeam = (window.__profilCoachTeamView && coachTeams.includes(window.__profilCoachTeamView)) ? window.__profilCoachTeamView : defaultCoachTeam;
-    const coachRowForTeam = coachRows.find(r => (r[3] || "SM1") === chosenCoachTeam) || coachRows[0];
-    const coachNomForTeam = coachRowForTeam ? coachRowForTeam[0] : session.nom;
 
     if (coachTeams.length > 1) {
       html += renderTeamSwitcher(coachTeams, chosenCoachTeam, "profil-coach-team");
     }
 
-    html += renderPtypeCard("Ta présence par type", computePresenceByType(coachNomForTeam, chosenCoachTeam));
+    html += renderPtypeCard("Ta présence par type", computePresenceByType(session.nom, chosenCoachTeam));
     html += renderAverageCard(chosenCoachTeam, false);
     html += renderAverageCard(chosenCoachTeam, true);
 
-    const mesJoueurs = comptes.slice(1).filter(c => c[1] === "Joueur" && (c[3] || "SM1") === chosenCoachTeam);
+    const mesJoueurs = comptes.slice(1).filter(c => rowHasRole(c, "Joueur") && rowEquipesForRole(c, "Joueur").indexOf(chosenCoachTeam) !== -1);
     const showAll = !!window.__profilJoueursExpanded;
     const visible = showAll ? mesJoueurs : mesJoueurs.slice(0, 4);
     html += `<div class="card">
@@ -2714,16 +2726,14 @@ function renderProfilPage() {
         <div class="mesjoueurs-row">
           <div class="cn-avatar" style="width:32px; height:32px; font-size:11px;">${getInitials(j[0])}</div>
           <div class="mesjoueurs-name">${j[0]}</div>
-          ${j[5] ? `<span class="badge">${String(j[5]).split(",")[0]}</span>` : ""}
+          ${j[3] ? `<span class="badge">${String(j[3]).split(",")[0]}</span>` : ""}
         </div>`).join("")}
       ${mesJoueurs.length > 4 ? `<div class="expand-toggle" data-toggle-profil-joueurs="1">${showAll ? "Réduire ▲" : "Voir les autres ▾"}</div>` : ""}
     </div>`;
   } else {
-    const joueurRow = linkedRows.find(r => r[1] === "Joueur");
-    const isJoueur = !!joueurRow || hasRole("Joueur");
-    const joueurNom = joueurRow ? joueurRow[0] : session.nom;
-    const joueurEquipe = joueurRow ? (joueurRow[3] || "SM1") : (primaryEquipe());
-    html += renderPtypeCard("Présence par type", computePresenceByType(joueurNom, joueurEquipe));
+    const isJoueur = hasRole("Joueur");
+    const joueurEquipe = equipesForRole("Joueur")[0] || primaryEquipe();
+    html += renderPtypeCard("Présence par type", computePresenceByType(session.nom, joueurEquipe));
     if (isJoueur) html += renderStatsRecapCard(postes);
   }
 
