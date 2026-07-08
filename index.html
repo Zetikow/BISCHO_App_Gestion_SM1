@@ -765,62 +765,65 @@ function goToPhotoView(equipe, date, titre) {
 }
 
 // ===================== CONSIGNES D'UTILISATION =====================
-const GUIDE_SECTIONS = [
-  { title: "Se connecter", items: [
-    "Tape ton nom — une liste de suggestions apparaît au fur et à mesure.",
-    "La première fois, choisis un code à 4 chiffres : retiens-le bien, il te sera redemandé à chaque connexion.",
-    "Si tu as plusieurs rôles au club (ex : joueur et coach), tous tes accès s'ajoutent automatiquement — rien à choisir.",
-  ]},
-  { title: "Accueil", items: [
-    "Le prochain événement est mis en avant, avec un bouton Présent/Absent en un tap.",
-    "Les résultats des 2 derniers matchs et les 2 prochains de ton équipe s'affichent automatiquement, avec un halo vert en cas de victoire.",
-    "Un encart Caisse noire et Présence apparaît si ton rôle y donne accès.",
-  ]},
-  { title: "Agenda", items: [
-    "Matchs, entraînements, repas, soirées — filtrés par équipe si tu en as plusieurs.",
-    "Coach/Admin/Salarié peuvent créer un événement avec le bouton \"+ Ajouter un événement\".",
-    "Le bouton \"Exporter mon calendrier\" télécharge un fichier à ajouter à l'agenda de ton téléphone.",
-  ]},
-  { title: "Actualités", items: [
-    "Publications de ton équipe et publications générales du club.",
-    "Coach, Admin et Salarié peuvent publier une actualité.",
-  ]},
-  { title: "Caisse noire (SM1)", items: [
-    "Chaque joueur SM1 voit sa carte avec le détail des actions et le total dû.",
-    "Seul l'Admin peut modifier un compteur en cas d'erreur.",
-  ]},
-  { title: "Présence", items: [
-    "Réservé au Coach et à l'Admin : historique complet et moyennes de présence par joueur.",
-  ]},
-  { title: "Paiements", items: [
-    "Réservé à l'Admin : suivi des cotisations réglées et restant dues.",
-  ]},
-  { title: "Profil", items: [
-    "Ta photo, tes rôles, ton ou tes postes.",
-    "Renseigne ton adresse mail pour recevoir les rappels de présence — c'est le seul moyen d'être prévenu automatiquement.",
-    "Si tu es à la fois joueur et coach, bascule entre les deux vues avec les boutons en haut de la page.",
-  ]},
-  { title: "Espace salariés", items: [
-    "Réservé au Salarié et à l'Admin : documents et dossiers du club, hébergés sur Google Drive.",
-  ]},
-  { title: "Galerie photos", items: [
-    "Accessible depuis le bouton 📷 sur la carte des résultats de l'Accueil.",
-    "Les photos sont ajoutées par l'Admin ou le Salarié directement sur Google Drive.",
-  ]},
-  { title: "Covoiturage", items: [
-    "Visible pour les matchs à l'extérieur uniquement.",
-    "Indique si tu conduis (avec le nombre de places) ou si tu cherches une place.",
-    "Pour les équipes de mineurs, c'est le parent qui renseigne à la place de l'enfant.",
-  ]},
-  { title: "Une question qui n'est pas ici ?", items: [
+function guideSections() {
+  const isSM1 = isInTeam("SM1") || hasRole("Admin");
+  return [
+    { title: "Se connecter", items: [
+      "Tape ton nom — une liste de suggestions apparaît au fur et à mesure.",
+      "La première fois, choisis un code à 4 chiffres : retiens-le bien, il te sera redemandé à chaque connexion.",
+      "Si tu as plusieurs rôles au club (ex : joueur et coach), tous tes accès s'ajoutent automatiquement — rien à choisir.",
+    ]},
+    { title: "Accueil", items: [
+      "Le prochain événement est mis en avant, avec un bouton Présent/Absent en un tap.",
+      "Les résultats des 2 derniers matchs et les 2 prochains de ton équipe s'affichent automatiquement, avec un halo vert en cas de victoire.",
+      isSM1 ? "Un encart Caisse noire et Présence apparaît si ton rôle y donne accès." : "Un encart Présence apparaît si ton rôle y donne accès.",
+    ]},
+    { title: "Agenda", items: [
+      "Matchs, entraînements, repas, soirées — filtrés par équipe si tu en as plusieurs.",
+      "Coach/Admin/Salarié peuvent créer un événement avec le bouton \"+ Ajouter un événement\".",
+      "Le bouton \"Exporter mon calendrier\" télécharge un fichier à ajouter à l'agenda de ton téléphone.",
+    ]},
+    { title: "Actualités", items: [
+      "Publications de ton équipe et publications générales du club.",
+      "Coach, Admin et Salarié peuvent publier une actualité.",
+    ]},
+    ...(isSM1 ? [{ title: "Caisse noire (SM1)", items: [
+      "Chaque joueur SM1 voit sa carte avec le détail des actions et le total dû.",
+      "Seul l'Admin peut modifier un compteur en cas d'erreur.",
+    ]}] : []),
+    { title: "Présence", items: [
+      "Réservé au Coach et à l'Admin : historique complet et moyennes de présence par joueur.",
+    ]},
+    ...(isSM1 ? [{ title: "Paiements", items: [
+      "Réservé à l'Admin : suivi des cotisations réglées et restant dues.",
+    ]}] : []),
+    { title: "Profil", items: [
+      "Ta photo, tes rôles, ton ou tes postes.",
+      "Renseigne ton adresse mail pour recevoir les rappels de présence — c'est le seul moyen d'être prévenu automatiquement.",
+      "Si tu es à la fois joueur et coach, bascule entre les deux vues avec les boutons en haut de la page.",
+    ]},
+    { title: "Espace salariés", items: [
+      "Réservé au Salarié et à l'Admin : documents et dossiers du club, hébergés sur Google Drive.",
+    ]},
+    { title: "Galerie photos", items: [
+      "Accessible depuis le bouton 📷 sur la carte des résultats de l'Accueil.",
+      "Les photos sont ajoutées par l'Admin ou le Salarié directement sur Google Drive.",
+    ]},
+    { title: "Covoiturage", items: [
+      "Visible pour les matchs à l'extérieur uniquement.",
+      "Indique si tu conduis (avec le nombre de places) ou si tu cherches une place.",
+      "Pour les équipes de mineurs, c'est le parent qui renseigne à la place de l'enfant.",
+    ]},
+    { title: "Une question qui n'est pas ici ?", items: [
     "Utilise \"Support / une question ?\" dans le menu (en cliquant sur tes initiales) — ton message part directement à l'équipe de gestion du club.",
   ]},
-];
+  ];
+}
 
 function renderGuidePage() {
   let html = `<button class="back-link" data-goto-page="home">← Retour à l'accueil</button>`;
   html += `<div class="page-title">Consignes d'utilisation</div><div class="page-sub">Tout ce qu'il faut savoir pour utiliser LustuZone</div>`;
-  GUIDE_SECTIONS.forEach(s => {
+  guideSections().forEach(s => {
     html += `<div class="card">
       <div class="section-h" style="margin-top:0;">${escapeHtml(s.title)}</div>
       ${s.items.map(i => `<div style="font-size:12.5px; color:#c3ccde; margin-bottom:7px; line-height:1.5; padding-left:14px; position:relative;"><span style="position:absolute; left:0;">•</span>${escapeHtml(i)}</div>`).join("")}
@@ -830,8 +833,10 @@ function renderGuidePage() {
 }
 
 // ===================== SUPPORT =====================
+let supportHistoryState = { loading: false, loaded: false, history: [] };
+
 function renderSupportPage() {
-  return `<button class="back-link" data-goto-page="home">← Retour à l'accueil</button>
+  let html = `<button class="back-link" data-goto-page="home">← Retour à l'accueil</button>
   <div class="page-title">Support / une question ?</div>
   <div class="page-sub">Ton message part directement à l'équipe de gestion du club.</div>
   <div class="card">
@@ -840,6 +845,39 @@ function renderSupportPage() {
     <button class="btn" id="support-submit" style="margin-top:10px;" ${window.__supportSending ? "disabled" : ""}>${window.__supportSending ? "Envoi en cours..." : "Envoyer"}</button>
     ${window.__supportSent ? `<div class="muted" style="margin-top:8px; color:#33d17a; font-weight:700;">✓ Message envoyé, merci !</div>` : ""}
   </div>`;
+
+  html += `<div class="section-h">Mes demandes précédentes</div>`;
+  if (supportHistoryState.loading && !supportHistoryState.loaded) {
+    html += `<div class="card"><div class="muted">Chargement…</div></div>`;
+  } else if (supportHistoryState.history.length === 0) {
+    html += `<div class="card"><div class="muted">Aucune demande envoyée pour le moment.</div></div>`;
+  } else {
+    supportHistoryState.history.forEach(h => {
+      html += `<div class="card">
+        <div class="muted" style="font-size:10.5px; margin-bottom:6px;">${escapeHtml(h.date)}</div>
+        <div style="font-size:12.5px; color:#e8e8ee; line-height:1.5;">${escapeHtml(h.message)}</div>
+        ${h.reponse ? `<div style="margin-top:10px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.08);">
+          <div style="font-size:9.5px; font-weight:800; text-transform:uppercase; color:#33d17a; margin-bottom:5px;">Réponse du club</div>
+          <div style="font-size:12.5px; color:#c3ccde; line-height:1.5;">${escapeHtml(h.reponse)}</div>
+        </div>` : `<div class="muted" style="margin-top:8px; font-size:10.5px; font-style:italic;">En attente de réponse</div>`}
+      </div>`;
+    });
+  }
+  return html;
+}
+
+async function fetchSupportHistory() {
+  const cached = supportHistoryState.loaded;
+  supportHistoryState.loading = true;
+  if (!cached) render();
+  try {
+    const params = new URLSearchParams({ action: "getMySupportHistory", authNom: session.nom, authCode: session.code });
+    const res = await fetch(`${GOOGLE_SCRIPT_URL}?${params.toString()}`);
+    const data = await res.json();
+    if (data.ok) supportHistoryState = { loading: false, loaded: true, history: data.history || [] };
+    else supportHistoryState.loading = false;
+  } catch (err) { supportHistoryState.loading = false; }
+  render();
 }
 
 async function sendSupportMessageApi(message) {
@@ -850,7 +888,9 @@ async function sendSupportMessageApi(message) {
     await fetch(`${GOOGLE_SCRIPT_URL}?${params.toString()}`);
     window.__supportSending = false;
     window.__supportSent = true;
-    render();
+    const msgField = document.getElementById("support-message");
+    if (msgField) msgField.value = ""; // réinitialise le champ après envoi
+    fetchSupportHistory(); // recharge la liste pour y voir la nouvelle demande
   } catch (err) {
     window.__supportSending = false;
     isOnline = false;
@@ -939,7 +979,7 @@ const LOGO_DATA_URI = "icon-512.png";
 const SESSION_KEY = "caisse-noire-session"; // {nom, role, code, equipe}
 const APP_VERSION_KEY = "caisse-noire-app-version";
 const LAST_USER_KEY = "lustuzone-last-user"; // simple mémorisation du dernier nom connecté sur cet appareil (pas le code)
-const APP_VERSION = "2026-07-07-12"; // À incrémenter à chaque mise à jour déployée
+const APP_VERSION = "2026-07-07-13"; // À incrémenter à chaque mise à jour déployée
 const SEASON_START = new Date(2026, 8, 1);  // 1er septembre 2026
 const SEASON_END = new Date(2027, 5, 30);   // 30 juin 2027
 
@@ -4003,6 +4043,7 @@ function attachEvents() {
   if (menuSupport) menuSupport.onclick = () => {
     window.__avatarMenuOpen = false;
     currentPage = "support";
+    fetchSupportHistory();
     render();
   };
 
