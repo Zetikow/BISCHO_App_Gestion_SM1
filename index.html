@@ -76,7 +76,8 @@
   .bn-extra-menu { position: absolute; bottom: 100%; right: -8px; margin-bottom: 12px; background: #11141f; border: 1px solid rgba(47,107,255,0.28); border-radius: 14px; padding: 10px; min-width: 170px; z-index: 60; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
   .avatar-menu-item.active { color: var(--accent2); }
 
-  select, input { font-size: 15px; padding: 10px; border-radius: 10px; border: 1px solid #1c2333; background: #11141f; color: #e8e8ee; width: 100%; font-family: 'Archivo', sans-serif; color-scheme: dark; }
+  select, input, textarea { font-size: 15px; padding: 10px; border-radius: 10px; border: 1px solid #1c2333; background: #11141f; color: #e8e8ee; width: 100%; font-family: 'Archivo', sans-serif; color-scheme: dark; }
+  textarea { resize: vertical; }
   select:focus, input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
   input[type="date"], input[type="time"] { padding: 9px 10px; height: 44px; }
   table { border-collapse: collapse; width: 100%; font-size: 11px; }
@@ -763,6 +764,100 @@ function goToPhotoView(equipe, date, titre) {
   fetchPhotosForMatch(equipe, date, titre);
 }
 
+// ===================== CONSIGNES D'UTILISATION =====================
+const GUIDE_SECTIONS = [
+  { title: "Se connecter", items: [
+    "Tape ton nom — une liste de suggestions apparaît au fur et à mesure.",
+    "La première fois, choisis un code à 4 chiffres : retiens-le bien, il te sera redemandé à chaque connexion.",
+    "Si tu as plusieurs rôles au club (ex : joueur et coach), tous tes accès s'ajoutent automatiquement — rien à choisir.",
+  ]},
+  { title: "Accueil", items: [
+    "Le prochain événement est mis en avant, avec un bouton Présent/Absent en un tap.",
+    "Les résultats des 2 derniers matchs et les 2 prochains de ton équipe s'affichent automatiquement, avec un halo vert en cas de victoire.",
+    "Un encart Caisse noire et Présence apparaît si ton rôle y donne accès.",
+  ]},
+  { title: "Agenda", items: [
+    "Matchs, entraînements, repas, soirées — filtrés par équipe si tu en as plusieurs.",
+    "Coach/Admin/Salarié peuvent créer un événement avec le bouton \"+ Ajouter un événement\".",
+    "Le bouton \"Exporter mon calendrier\" télécharge un fichier à ajouter à l'agenda de ton téléphone.",
+  ]},
+  { title: "Actualités", items: [
+    "Publications de ton équipe et publications générales du club.",
+    "Coach, Admin et Salarié peuvent publier une actualité.",
+  ]},
+  { title: "Caisse noire (SM1)", items: [
+    "Chaque joueur SM1 voit sa carte avec le détail des actions et le total dû.",
+    "Seul l'Admin peut modifier un compteur en cas d'erreur.",
+  ]},
+  { title: "Présence", items: [
+    "Réservé au Coach et à l'Admin : historique complet et moyennes de présence par joueur.",
+  ]},
+  { title: "Paiements", items: [
+    "Réservé à l'Admin : suivi des cotisations réglées et restant dues.",
+  ]},
+  { title: "Profil", items: [
+    "Ta photo, tes rôles, ton ou tes postes.",
+    "Renseigne ton adresse mail pour recevoir les rappels de présence — c'est le seul moyen d'être prévenu automatiquement.",
+    "Si tu es à la fois joueur et coach, bascule entre les deux vues avec les boutons en haut de la page.",
+  ]},
+  { title: "Espace salariés", items: [
+    "Réservé au Salarié et à l'Admin : documents et dossiers du club, hébergés sur Google Drive.",
+  ]},
+  { title: "Galerie photos", items: [
+    "Accessible depuis le bouton 📷 sur la carte des résultats de l'Accueil.",
+    "Les photos sont ajoutées par l'Admin ou le Salarié directement sur Google Drive.",
+  ]},
+  { title: "Covoiturage", items: [
+    "Visible pour les matchs à l'extérieur uniquement.",
+    "Indique si tu conduis (avec le nombre de places) ou si tu cherches une place.",
+    "Pour les équipes de mineurs, c'est le parent qui renseigne à la place de l'enfant.",
+  ]},
+  { title: "Une question qui n'est pas ici ?", items: [
+    "Utilise \"Support / une question ?\" dans le menu (en cliquant sur tes initiales) — ton message part directement à l'équipe de gestion du club.",
+  ]},
+];
+
+function renderGuidePage() {
+  let html = `<button class="back-link" data-goto-page="home">← Retour à l'accueil</button>`;
+  html += `<div class="page-title">Consignes d'utilisation</div><div class="page-sub">Tout ce qu'il faut savoir pour utiliser LustuZone</div>`;
+  GUIDE_SECTIONS.forEach(s => {
+    html += `<div class="card">
+      <div class="section-h" style="margin-top:0;">${escapeHtml(s.title)}</div>
+      ${s.items.map(i => `<div style="font-size:12.5px; color:#c3ccde; margin-bottom:7px; line-height:1.5; padding-left:14px; position:relative;"><span style="position:absolute; left:0;">•</span>${escapeHtml(i)}</div>`).join("")}
+    </div>`;
+  });
+  return html;
+}
+
+// ===================== SUPPORT =====================
+function renderSupportPage() {
+  return `<button class="back-link" data-goto-page="home">← Retour à l'accueil</button>
+  <div class="page-title">Support / une question ?</div>
+  <div class="page-sub">Ton message part directement à l'équipe de gestion du club.</div>
+  <div class="card">
+    <label class="field-label">Ton message</label>
+    <textarea id="support-message" rows="6" placeholder="Décris ta question ou ton souci..."></textarea>
+    <button class="btn" id="support-submit" style="margin-top:10px;" ${window.__supportSending ? "disabled" : ""}>${window.__supportSending ? "Envoi en cours..." : "Envoyer"}</button>
+    ${window.__supportSent ? `<div class="muted" style="margin-top:8px; color:#33d17a; font-weight:700;">✓ Message envoyé, merci !</div>` : ""}
+  </div>`;
+}
+
+async function sendSupportMessageApi(message) {
+  window.__supportSending = true;
+  render();
+  try {
+    const params = new URLSearchParams({ action: "sendSupportMessage", message, authNom: session.nom, authCode: session.code });
+    await fetch(`${GOOGLE_SCRIPT_URL}?${params.toString()}`);
+    window.__supportSending = false;
+    window.__supportSent = true;
+    render();
+  } catch (err) {
+    window.__supportSending = false;
+    isOnline = false;
+    render();
+  }
+}
+
 function renderGalleryPage() {
   const allowedTeams = myAllowedEquipes();
   const requested = window.__galleryEquipe || allowedTeams[0] || "SM1";
@@ -844,7 +939,7 @@ const LOGO_DATA_URI = "icon-512.png";
 const SESSION_KEY = "caisse-noire-session"; // {nom, role, code, equipe}
 const APP_VERSION_KEY = "caisse-noire-app-version";
 const LAST_USER_KEY = "lustuzone-last-user"; // simple mémorisation du dernier nom connecté sur cet appareil (pas le code)
-const APP_VERSION = "2026-07-07-11"; // À incrémenter à chaque mise à jour déployée
+const APP_VERSION = "2026-07-07-12"; // À incrémenter à chaque mise à jour déployée
 const SEASON_START = new Date(2026, 8, 1);  // 1er septembre 2026
 const SEASON_END = new Date(2027, 5, 30);   // 30 juin 2027
 
@@ -965,7 +1060,7 @@ function escapeHtml(str) {
 }
 
 function isFormOpen() {
-  return !!showAddEvent || !!window.__editingEvenementId || !!window.__editingPaiementId || !!window.__showAddPaiement || !!window.__showChangeCode || !!window.__showGenerateTrainings || !!window.__profilPosteAdding || (window.__profilPosteEditIndex !== null && window.__profilPosteEditIndex !== undefined) || !!window.__showAddActualite || !!window.__cnEditPlayer || !!window.__showSalariesAdd || !!window.__salariesPreviewFile || !!window.__salariesUploading || !!window.__profilEmailEditing;
+  return !!showAddEvent || !!window.__editingEvenementId || !!window.__editingPaiementId || !!window.__showAddPaiement || !!window.__showChangeCode || !!window.__showGenerateTrainings || !!window.__profilPosteAdding || (window.__profilPosteEditIndex !== null && window.__profilPosteEditIndex !== undefined) || !!window.__showAddActualite || !!window.__cnEditPlayer || !!window.__showSalariesAdd || !!window.__salariesPreviewFile || !!window.__salariesUploading || !!window.__profilEmailEditing || currentPage === "support";
 }
 
 async function fetchAll() {
@@ -1709,6 +1804,8 @@ function render() {
         <div class="avatar-menu-name">${session.nom}</div>
         <div class="badge avatar-menu-role">${rolesLabel()}</div>
         <div class="avatar-menu-item" id="menu-profil">Mon profil</div>
+        <div class="avatar-menu-item" id="menu-guide">📖 Consignes d'utilisation</div>
+        <div class="avatar-menu-item" id="menu-support">💬 Support / une question ?</div>
         <div class="avatar-menu-item" id="menu-changecode">Changer le code</div>
         <div class="avatar-menu-item danger" id="menu-logout">Se déconnecter</div>
       </div>` : ""}
@@ -1752,6 +1849,8 @@ function render() {
   else if (currentPage === "covoiturage") html += renderCovoiturageePage();
   else if (currentPage === "gallery") html += renderGalleryPage();
   else if (currentPage === "photoview") html += renderPhotoViewPage();
+  else if (currentPage === "guide") html += renderGuidePage();
+  else if (currentPage === "support") html += renderSupportPage();
 
   html += `<div class="bottom-nav">`;
   html += mainTabs.map(t =>
@@ -3456,6 +3555,14 @@ function attachEvents() {
   const exportCalendarBtn = document.getElementById("export-calendar-btn");
   if (exportCalendarBtn) exportCalendarBtn.onclick = () => { vibrate(); exportCalendarICS(); };
 
+  const supportSubmit = document.getElementById("support-submit");
+  if (supportSubmit) supportSubmit.onclick = () => {
+    const msg = (document.getElementById("support-message").value || "").trim();
+    if (!msg) { alert("Merci d'écrire un message avant d'envoyer."); return; }
+    vibrate();
+    sendSupportMessageApi(msg);
+  };
+
   document.querySelectorAll("[data-export-team-check]").forEach(el => {
     el.onchange = () => {
       const t = el.dataset.exportTeamCheck;
@@ -3882,6 +3989,20 @@ function attachEvents() {
   if (menuProfil) menuProfil.onclick = () => {
     window.__avatarMenuOpen = false;
     currentPage = "profil";
+    render();
+  };
+
+  const menuGuide = document.getElementById("menu-guide");
+  if (menuGuide) menuGuide.onclick = () => {
+    window.__avatarMenuOpen = false;
+    currentPage = "guide";
+    render();
+  };
+
+  const menuSupport = document.getElementById("menu-support");
+  if (menuSupport) menuSupport.onclick = () => {
+    window.__avatarMenuOpen = false;
+    currentPage = "support";
     render();
   };
 
