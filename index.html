@@ -844,7 +844,7 @@ const LOGO_DATA_URI = "icon-512.png";
 const SESSION_KEY = "caisse-noire-session"; // {nom, role, code, equipe}
 const APP_VERSION_KEY = "caisse-noire-app-version";
 const LAST_USER_KEY = "lustuzone-last-user"; // simple mémorisation du dernier nom connecté sur cet appareil (pas le code)
-const APP_VERSION = "2026-07-07-10"; // À incrémenter à chaque mise à jour déployée
+const APP_VERSION = "2026-07-07-11"; // À incrémenter à chaque mise à jour déployée
 const SEASON_START = new Date(2026, 8, 1);  // 1er septembre 2026
 const SEASON_END = new Date(2027, 5, 30);   // 30 juin 2027
 
@@ -1821,6 +1821,7 @@ const NAV_ICONS = {
   profil: '<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/>',
   actualites: '<path d="M3 11l18-5v12L3 14v-3z"/><path d="M7 14v5a2 2 0 002 2h1"/>',
   salaries: '<path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/>',
+  covoiturage: '<path d="M5 11l1.5-4.5A2 2 0 018.4 5h7.2a2 2 0 011.9 1.5L19 11M3 11h18v6a1 1 0 01-1 1h-1a1 1 0 01-1-1v-1H6v1a1 1 0 01-1 1H4a1 1 0 01-1-1v-6z"/><circle cx="7.5" cy="16.5" r="1.5"/><circle cx="16.5" cy="16.5" r="1.5"/>',
 };
 
 function getTabsForRole() {
@@ -1836,16 +1837,29 @@ function getTabsForRole() {
     tabs.push({ id: "table", label: "Caisse", main: true });
   }
 
-  // Peu d'onglets principaux (ex: équipe sans caisse noire) -> Profil directement dans le bandeau.
+  const extraCandidates = [];
+  if (hasRole("Coach") || hasRole("Admin")) extraCandidates.push({ id: "presence", label: "Présence", main: false });
+  if (hasRole("Admin")) extraCandidates.push({ id: "paiements", label: "Paiements", main: false });
+  if (hasRole("Salarié") || hasRole("Admin")) extraCandidates.push({ id: "salaries", label: "Espace salariés", main: false });
+  const hasCovoit = hasRole("Joueur") || hasRole("Coach") || hasRole("Parent") || hasRole("Admin");
+
+  // S'il y a la place, tout s'affiche directement dans la barre — Covoiturage juste avant
+  // Profil, et Profil toujours tout à droite en dernier.
+  const totalIfAllMain = tabs.length + extraCandidates.length + (hasCovoit ? 1 : 0) + 1;
+  if (totalIfAllMain <= 6) {
+    extraCandidates.forEach(e => tabs.push({ ...e, main: true }));
+    if (hasCovoit) tabs.push({ id: "covoiturage", label: "Covoiturage", main: true });
+    tabs.push({ id: "profil", label: "Profil", main: true });
+    return tabs;
+  }
+
+  // Sinon, trop d'onglets pour tenir : comportement historique avec "Plus".
   if (tabs.filter(t => t.main).length <= 3) {
     tabs.push({ id: "profil", label: "Profil", main: true });
   }
 
-  const extra = [];
-  if (hasRole("Coach") || hasRole("Admin")) extra.push({ id: "presence", label: "Présence", main: false });
-  if (hasRole("Admin")) extra.push({ id: "paiements", label: "Paiements", main: false });
-  if (hasRole("Salarié") || hasRole("Admin")) extra.push({ id: "salaries", label: "Espace salariés", main: false });
-  if (hasRole("Joueur") || hasRole("Coach") || hasRole("Parent") || hasRole("Admin")) extra.push({ id: "covoiturage", label: "Covoiturage", main: false });
+  const extra = extraCandidates.slice();
+  if (hasCovoit) extra.push({ id: "covoiturage", label: "Covoiturage", main: false });
 
   // Un seul élément dans "Plus" -> inutile de le cacher derrière un clic, on l'affiche directement.
   if (extra.length === 1) {
