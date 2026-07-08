@@ -834,6 +834,7 @@ function renderGuidePage() {
 
 // ===================== SUPPORT =====================
 let supportHistoryState = { loading: false, loaded: false, history: [] };
+let adminSupportState = { loading: false, loaded: false, requests: [] };
 
 function renderSupportPage() {
   let html = `<button class="back-link" data-goto-page="home">← Retour à l'accueil</button>
@@ -862,6 +863,33 @@ function renderSupportPage() {
         </div>` : `<div class="muted" style="margin-top:8px; font-size:10.5px; font-style:italic;">En attente de réponse</div>`}
       </div>`;
     });
+  }
+
+  if (hasRole("Admin")) {
+    html += `<div class="section-h">Demandes reçues (Admin)</div>`;
+    if (adminSupportState.loading && !adminSupportState.loaded) {
+      html += `<div class="card"><div class="muted">Chargement…</div></div>`;
+    } else if (adminSupportState.requests.length === 0) {
+      html += `<div class="card"><div class="muted">Aucune demande reçue pour le moment.</div></div>`;
+    } else {
+      adminSupportState.requests.forEach(r => {
+        const editing = window.__replyEditingId === r.id;
+        html += `<div class="card">
+          <div class="muted" style="font-size:10.5px; margin-bottom:6px;">${escapeHtml(r.date)} — <span style="color:#fff; font-weight:700;">${escapeHtml(r.nom)}</span></div>
+          <div style="font-size:12.5px; color:#e8e8ee; line-height:1.5; margin-bottom:8px;">${escapeHtml(r.message)}</div>
+          ${(r.reponse && !editing) ? `
+            <div style="padding-top:8px; border-top:1px solid rgba(255,255,255,0.08);">
+              <div style="font-size:9.5px; font-weight:800; text-transform:uppercase; color:#33d17a; margin-bottom:5px;">Ta réponse</div>
+              <div style="font-size:12.5px; color:#c3ccde; line-height:1.5;">${escapeHtml(r.reponse)}</div>
+              <div class="expand-toggle" data-edit-reply="${escapeHtml(r.id)}" style="margin-top:6px;">Modifier la réponse</div>
+            </div>
+          ` : `
+            <textarea data-reply-input="${escapeHtml(r.id)}" rows="3" placeholder="Ta réponse...">${escapeHtml(r.reponse || "")}</textarea>
+            <button class="btn" style="margin-top:8px;" data-reply-submit="${escapeHtml(r.id)}">Envoyer la réponse</button>
+          `}
+        </div>`;
+      });
+    }
   }
   return html;
 }
@@ -897,6 +925,30 @@ async function sendSupportMessageApi(message) {
     render();
   }
 }
+
+async function fetchAdminSupportRequests() {
+  const cached = adminSupportState.loaded;
+  adminSupportState.loading = true;
+  if (!cached) render();
+  try {
+    const params = new URLSearchParams({ action: "getAllSupportRequests", authNom: session.nom, authCode: session.code });
+    const res = await fetch(`${GOOGLE_SCRIPT_URL}?${params.toString()}`);
+    const data = await res.json();
+    if (data.ok) adminSupportState = { loading: false, loaded: true, requests: data.requests || [] };
+    else adminSupportState.loading = false;
+  } catch (err) { adminSupportState.loading = false; }
+  render();
+}
+
+async function replySupportMessageApi(id, reponse) {
+  try {
+    const params = new URLSearchParams({ action: "replySupportMessage", id, reponse, authNom: session.nom, authCode: session.code });
+    await fetch(`${GOOGLE_SCRIPT_URL}?${params.toString()}`);
+    window.__replyEditingId = null;
+    fetchAdminSupportRequests();
+  } catch (err) { isOnline = false; render(); }
+}
+
 
 function renderGalleryPage() {
   const allowedTeams = myAllowedEquipes();
@@ -979,7 +1031,7 @@ const LOGO_DATA_URI = "icon-512.png";
 const SESSION_KEY = "caisse-noire-session"; // {nom, role, code, equipe}
 const APP_VERSION_KEY = "caisse-noire-app-version";
 const LAST_USER_KEY = "lustuzone-last-user"; // simple mémorisation du dernier nom connecté sur cet appareil (pas le code)
-const APP_VERSION = "2026-07-07-13"; // À incrémenter à chaque mise à jour déployée
+const APP_VERSION = "2026-07-07-14"; // À incrémenter à chaque mise à jour déployée
 const SEASON_START = new Date(2026, 8, 1);  // 1er septembre 2026
 const SEASON_END = new Date(2027, 5, 30);   // 30 juin 2027
 
@@ -3603,6 +3655,21 @@ function attachEvents() {
     sendSupportMessageApi(msg);
   };
 
+  document.querySelectorAll("[data-edit-reply]").forEach(el => {
+    el.onclick = () => { vibrate(); window.__replyEditingId = el.dataset.editReply; render(); };
+  });
+
+  document.querySelectorAll("[data-reply-submit]").forEach(el => {
+    el.onclick = () => {
+      const id = el.dataset.replySubmit;
+      const textarea = document.querySelector(`[data-reply-input="${id}"]`);
+      const reponse = (textarea ? textarea.value : "").trim();
+      if (!reponse) { alert("Écris une réponse avant d'envoyer."); return; }
+      vibrate();
+      replySupportMessageApi(id, reponse);
+    };
+  });
+
   document.querySelectorAll("[data-export-team-check]").forEach(el => {
     el.onchange = () => {
       const t = el.dataset.exportTeamCheck;
@@ -4044,6 +4111,7 @@ function attachEvents() {
     window.__avatarMenuOpen = false;
     currentPage = "support";
     fetchSupportHistory();
+    if (hasRole("Admin")) fetchAdminSupportRequests();
     render();
   };
 
