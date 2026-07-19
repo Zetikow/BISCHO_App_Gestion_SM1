@@ -113,6 +113,7 @@
   .cn-hero { text-align: center; background: linear-gradient(160deg, rgba(47,107,255,0.16), rgba(0,212,255,0.06)); border: 1px solid rgba(47,107,255,0.4); border-radius: 20px; padding: 22px 16px; margin-bottom: 14px; box-shadow: 0 0 30px rgba(47,107,255,0.12), inset 0 0 24px rgba(0,212,255,0.05); }
   .cn-hero-label { font-size: 12px; color: #9db3e0; font-weight: 800; text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 6px; }
   .cn-hero-value { font-size: 46px; font-weight: 900; color: #fff; letter-spacing: -1.2px; text-shadow: 0 0 24px rgba(0,212,255,0.45); }
+  .cn-hero-sub { font-size: 10.5px; color: #9db3e0; font-weight: 700; margin-top: 4px; }
   .cn-add-btn { margin-bottom: 14px; }
   .cn-card { padding: 15px 16px; }
   .cn-row { display: flex; align-items: flex-start; gap: 12px; }
@@ -161,6 +162,10 @@
   .login-suggestions { display: none; position: absolute; top: 100%; left: 0; right: 0; margin-top: 4px; background: #181d2e; border: 1px solid rgba(47,107,255,0.35); border-radius: 12px; max-height: 220px; overflow-y: auto; z-index: 50; text-align: left; box-shadow: 0 8px 20px rgba(0,0,0,0.4); }
   .login-suggestion-item { padding: 11px 14px; font-size: 13px; font-weight: 600; color: #e8e8ee; border-bottom: 1px solid rgba(255,255,255,0.06); }
   .login-suggestion-item:last-child { border-bottom: none; }
+  .ptr-indicator { position: fixed; top: 6px; left: 50%; transform: translateX(-50%) translateY(0px); z-index: 999; opacity: 0; pointer-events: none; transition: opacity 0.15s linear; }
+  .ptr-spinner { width: 30px; height: 30px; border-radius: 50%; border: 3px solid rgba(0,212,255,0.25); border-top-color: #00d4ff; background: rgba(17,20,31,0.85); box-shadow: 0 4px 12px rgba(0,0,0,0.4); }
+  .ptr-indicator.ptr-spinning .ptr-spinner { animation: ptrspin 0.7s linear infinite; }
+  @keyframes ptrspin { to { transform: rotate(360deg); } }
   .login-suggestion-item:active { background: rgba(47,107,255,0.18); }
   .login-card .login-glow { position: absolute; top: -60px; right: -60px; width: 220px; height: 220px; background: var(--glow); }
   .login-card img { height: 168px; margin-bottom: 16px; border-radius: 30px; position: relative; box-shadow: 0 10px 40px rgba(47,107,255,0.35); }
@@ -1093,7 +1098,7 @@ const LOGO_DATA_URI = "icon-512.png";
 const SESSION_KEY = "caisse-noire-session"; // {nom, role, code, equipe}
 const APP_VERSION_KEY = "caisse-noire-app-version";
 const LAST_USER_KEY = "lustuzone-last-user"; // simple mémorisation du dernier nom connecté sur cet appareil (pas le code)
-const APP_VERSION = "2026-07-07-23"; // À incrémenter à chaque mise à jour déployée
+const APP_VERSION = "2026-07-07-24"; // À incrémenter à chaque mise à jour déployée
 const SEASON_START = new Date(2026, 8, 1);  // 1er septembre 2026
 const SEASON_END = new Date(2027, 5, 30);   // 30 juin 2027
 
@@ -2748,9 +2753,13 @@ function renderCaisseNoireSummary() {
 
   let html = `<div class="page-title">Caisse noire</div><div class="page-sub">Total et détail des actions de chaque joueur.</div>`;
 
+  const totalPayeEquipe = paiements.reduce((s, r) => s + (parseFloat(r[2]) || 0), 0);
+  const resteEquipe = grandTotal() - totalPayeEquipe;
+
   html += `<div class="cn-hero">
     <div class="cn-hero-label">Total équipe</div>
     <div class="cn-hero-value">${fmt(grandTotal())} €</div>
+    <div class="cn-hero-sub">${fmt(totalPayeEquipe)} € déjà payé · ${fmt(resteEquipe)} € restant</div>
   </div>`;
 
   html += `<button class="btn add-btn-primary" id="cn-add-action">${window.__showQuickAdd ? "− Fermer" : "+ Saisir une action"}</button>`;
@@ -2814,6 +2823,8 @@ function renderCaisseNoireSummary() {
       }
     }
 
+    const payePlayer = totalPaye(p);
+    const restePlayer = total - payePlayer;
     return `<div class="card cn-card">
       <div class="cn-row">
         <div class="cn-avatar">${getInitials(p)}</div>
@@ -2822,6 +2833,7 @@ function renderCaisseNoireSummary() {
             <span class="cn-name">${p}</span>
             <span class="cn-amount">${fmt(total)} €</span>
           </div>
+          <div class="cn-hero-sub" style="margin-bottom:6px;">${fmt(payePlayer)} € déjà payé · ${fmt(restePlayer)} € restant</div>
           ${items.length ? `<div class="cn-bubbles">${bubbles}</div>` : `<div class="cn-actions muted">Aucune action enregistrée</div>`}
           ${isAdmin && items.length > 0 ? `<div class="justif-edit-btn cn-modifier-btn" data-cn-toggle-edit="${p}">${editingThis ? "Fermer" : "Modifier"}</div>` : ""}
           ${editBlock}
@@ -3518,7 +3530,7 @@ function renderPaiementsPage() {
     </div>`;
     if (reste > 0) {
       if (PAYPAL_ME_USERNAME) {
-        html += `<a href="https://paypal.me/${encodeURIComponent(PAYPAL_ME_USERNAME)}/${reste}" target="_blank" rel="noopener" class="btn" style="display:block; text-align:center; background:#ffc439; color:#003087; text-decoration:none; box-sizing:border-box;">Payer ${fmt(reste)} € via PayPal</a>`;
+        html += `<a href="https://paypal.me/${encodeURIComponent(PAYPAL_ME_USERNAME)}/${reste}" target="_blank" rel="noopener" class="btn" style="display:block; text-align:center; background:#ffc439; color:#003087; text-decoration:none; box-sizing:border-box;">Payer via PayPal</a>`;
       }
       html += `<button class="btn secondary" style="margin-top:10px;" id="notify-payment-btn" ${window.__paymentNotifySending ? "disabled" : ""}>${window.__paymentNotifySending ? "Envoi en cours..." : "✓ J'ai payé — prévenir l'Admin"}</button>`;
       if (window.__paymentNotifySent) {
@@ -4497,6 +4509,61 @@ else {
     checkAccountStatus(loginSelectedNom);
   }
 }
+
+// ===================== TIRER POUR RAFRAÎCHIR (pull-to-refresh) =====================
+let ptrStartY = null, ptrDiff = 0, ptrActive = false, ptrRefreshing = false;
+const PTR_THRESHOLD = 65;
+
+function initPullToRefresh() {
+  const indicator = document.createElement("div");
+  indicator.id = "ptr-indicator";
+  indicator.className = "ptr-indicator";
+  indicator.innerHTML = '<div class="ptr-spinner"></div>';
+  document.body.appendChild(indicator);
+
+  document.addEventListener("touchstart", (e) => {
+    if (ptrRefreshing) return;
+    if (window.scrollY <= 0 && !isFormOpen()) {
+      ptrStartY = e.touches[0].clientY;
+      ptrActive = true;
+    } else {
+      ptrActive = false;
+    }
+  }, { passive: true });
+
+  document.addEventListener("touchmove", (e) => {
+    if (!ptrActive || ptrStartY === null || ptrRefreshing) return;
+    ptrDiff = e.touches[0].clientY - ptrStartY;
+    if (ptrDiff > 0 && window.scrollY <= 0) {
+      const pull = Math.min(ptrDiff, 100);
+      indicator.style.opacity = String(Math.min(pull / PTR_THRESHOLD, 1));
+      indicator.style.transform = `translateX(-50%) translateY(${Math.min(pull, PTR_THRESHOLD)}px)`;
+      if (pull > 8 && e.cancelable) e.preventDefault();
+    }
+  }, { passive: false });
+
+  document.addEventListener("touchend", () => {
+    if (!ptrActive) return;
+    ptrActive = false;
+    if (ptrDiff > PTR_THRESHOLD && !ptrRefreshing) {
+      ptrRefreshing = true;
+      indicator.classList.add("ptr-spinning");
+      indicator.style.opacity = "1";
+      indicator.style.transform = "translateX(-50%) translateY(65px)";
+      Promise.resolve(fetchAll()).finally(() => {
+        ptrRefreshing = false;
+        indicator.classList.remove("ptr-spinning");
+        indicator.style.opacity = "0";
+        indicator.style.transform = "translateX(-50%) translateY(0px)";
+      });
+    } else {
+      indicator.style.opacity = "0";
+      indicator.style.transform = "translateX(-50%) translateY(0px)";
+    }
+    ptrDiff = 0;
+  });
+}
+initPullToRefresh();
 </script>
 </body>
 </html>
