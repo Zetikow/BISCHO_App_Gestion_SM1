@@ -320,9 +320,14 @@
   .ldsdr:after { content: " "; display: block; width: 48px; height: 48px; margin: 6px; border-radius: 50%; border: 5px solid #1E457B; border-color: #1E457B transparent; animation: ldsdr 1.2s linear infinite; }
   @keyframes ldsdr { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
   .matchcard-wrap { position: relative; overflow: hidden; }
-  .matchcard-carousel { display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 2px; margin: 0 -2px; scrollbar-width: none; }
+  .matchcard-carousel-wrap { position: relative; margin: 0 -2px; }
+  .matchcard-carousel { display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 2px 26px 4px; scrollbar-width: none; }
   .matchcard-carousel::-webkit-scrollbar { display: none; }
-  .matchcard-carousel .matchcard { flex: 0 0 88%; scroll-snap-align: start; margin-bottom: 0; }
+  .matchcard-carousel .matchcard { flex: 0 0 62%; scroll-snap-align: start; margin-bottom: 0; min-height: 200px; padding: 16px 14px; display: flex; flex-direction: column; justify-content: space-between; }
+  .carousel-arrow { position: absolute; top: 50%; transform: translateY(-50%); width: 28px; height: 28px; border-radius: 50%; background: rgba(17,20,31,0.92); border: 1px solid rgba(0,212,255,0.4); color: #00d4ff; font-size: 16px; font-weight: 900; display: flex; align-items: center; justify-content: center; z-index: 5; box-shadow: 0 4px 10px rgba(0,0,0,0.4); line-height: 1; padding-bottom: 2px; }
+  .carousel-arrow.left { left: -2px; }
+  .carousel-arrow.right { right: -2px; }
+  .carousel-arrow:active { background: rgba(0,212,255,0.2); }
   .matchcard { border-radius: 14px; padding: 11px 13px; margin-bottom: 8px; border: 1px solid rgba(255,255,255,0.08); background: #11141f; position: relative; overflow: hidden; }
   .matchcard:last-child { margin-bottom: 0; }
   .matchcard.result.win { background: linear-gradient(160deg, rgba(51,209,122,0.20), rgba(17,20,31,0.4)); border-color: rgba(51,209,122,0.45); animation: victoryGlow 2.4s ease-in-out infinite; }
@@ -623,7 +628,11 @@ function renderResultsWidget(equipe) {
       <div class="section-h" style="margin-bottom:0; cursor:pointer;" data-toggle-home-section="${collapseKey}">🤾 Résultats & prochains matchs — ${equipe} ${isCollapsed ? "▾" : "▴"}</div>
       ${!isCollapsed ? `<button class="btn secondary" style="width:auto; padding:6px 12px; font-size:9.5px; margin:0;" data-goto-gallery="${escapeHtml(equipe)}">📷 Photos</button>` : ""}
     </div>
-    ${isCollapsed ? "" : `<div class="matchcard-carousel">${cards.join("")}</div>`}
+    ${isCollapsed ? "" : `<div class="matchcard-carousel-wrap">
+      <button class="carousel-arrow left" data-carousel-scroll="left" aria-label="Précédent">‹</button>
+      <div class="matchcard-carousel">${cards.join("")}</div>
+      <button class="carousel-arrow right" data-carousel-scroll="right" aria-label="Suivant">›</button>
+    </div>`}
   </div>`;
 }
 
@@ -1122,7 +1131,7 @@ const LOGO_DATA_URI = "icon-512.png";
 const SESSION_KEY = "caisse-noire-session"; // {nom, role, code, equipe}
 const APP_VERSION_KEY = "caisse-noire-app-version";
 const LAST_USER_KEY = "lustuzone-last-user"; // simple mémorisation du dernier nom connecté sur cet appareil (pas le code)
-const APP_VERSION = "2026-07-08-02"; // À incrémenter à chaque mise à jour déployée
+const APP_VERSION = "2026-07-08-03"; // À incrémenter à chaque mise à jour déployée
 const SEASON_START = new Date(2026, 8, 1);  // 1er septembre 2026
 const SEASON_END = new Date(2027, 5, 30);   // 30 juin 2027
 
@@ -1174,6 +1183,17 @@ function primaryEquipe() {
 function rolesLabel() {
   if (!session || !Array.isArray(session.roles)) return "";
   return [...new Set(session.roles.map(r => r.role))].join(" / ");
+}
+
+// Un compte "Parent pur" (sans autre rôle) ne peut que consulter la présence de son enfant,
+// pas la modifier — c'est à l'enfant (ou au coach/admin) de le faire.
+function myPresenceIdentity() {
+  const isPureParent = hasRole("Parent") && !hasRole("Joueur") && !hasRole("Coach") && !hasRole("Admin");
+  if (isPureParent) {
+    const parentRole = (session.roles || []).find(r => r.role === "Parent");
+    if (parentRole) return { nom: parentRole.equipe, editable: false };
+  }
+  return { nom: session.nom, editable: true };
 }
 
 // Si une nouvelle version de l'appli a été déployée, on déconnecte tout le monde
@@ -2505,11 +2525,25 @@ function renderNextEventCard() {
   const ev = nextEvenement();
   if (!ev) return "";
   const [id, date, heure, type] = ev;
-  const val = presenceEvenements[`${id}_${session.nom}`];
+  const presIdentity = myPresenceIdentity();
+  const val = presenceEvenements[`${id}_${presIdentity.nom}`];
   const now = new Date();
   const evDate = eventDateObj(ev);
   const diffDays = Math.round((evDate - now) / (1000 * 60 * 60 * 24));
   const countdownLabel = diffDays <= 0 ? "Aujourd'hui" : diffDays === 1 ? "Demain" : `Dans ${diffDays} jours`;
+
+  let actionsHtml = "";
+  if (!hasRole("Bénévole")) {
+    if (presIdentity.editable) {
+      actionsHtml = `<div class="nc-actions">
+        <button class="btn ${val === 'Oui' ? '' : 'secondary'}" data-event-presence="${id}" data-event-val="1">Présent</button>
+        <button class="btn secondary" style="${val === 'Non' ? 'background:#b33;color:#fff;' : ''}" data-event-presence="${id}" data-event-val="0">Absent</button>
+      </div>`;
+    } else {
+      const statusLabel = val === "Oui" ? "✅ Présent" : val === "Non" ? "❌ Absent" : "⏳ Pas encore répondu";
+      actionsHtml = `<div class="nc-actions"><div class="muted" style="font-size:12px;">Présence de ${escapeHtml(presIdentity.nom)} : ${statusLabel}</div></div>`;
+    }
+  }
 
   return `<div class="next-card"><div class="nc-inner">
     <div class="nc-glow"></div>
@@ -2517,10 +2551,7 @@ function renderNextEventCard() {
     <div class="nc-countdown" style="margin-left:6px;">⚡ ${countdownLabel}</div>
     <div class="nc-title">${ev[4] || "Événement"}</div>
     <div class="nc-meta">${formatEventDateFr(ev)} ${ev[2] ? "· " + formatHeure(ev) : ""} ${ev[5] ? "· " + ev[5] : ""}</div>
-    ${!hasRole("Bénévole") ? `<div class="nc-actions">
-      <button class="btn ${val === 'Oui' ? '' : 'secondary'}" data-event-presence="${id}" data-event-val="1">Présent</button>
-      <button class="btn secondary" style="${val === 'Non' ? 'background:#b33;color:#fff;' : ''}" data-event-presence="${id}" data-event-val="0">Absent</button>
-    </div>` : ""}
+    ${actionsHtml}
   </div></div>`;
 }
 
@@ -2672,7 +2703,8 @@ function renderJustifBlock(eventId) {
 function renderEventCard(ev, canManage, isPast) {
   const [id, date, heure, type, titre, lieu, equipe, score] = ev;
   const d = eventDateObj(ev);
-  const val = presenceEvenements[`${id}_${session.nom}`];
+  const presIdentity = myPresenceIdentity();
+  const val = presenceEvenements[`${id}_${presIdentity.nom}`];
   let presentCount = 0, absentCount = 0;
   const allNames = [...PLAYERS, "Coach", "Admin", "Bénévole"];
   allNames.forEach(n => {
@@ -2742,11 +2774,11 @@ function renderEventCard(ev, canManage, isPast) {
       </div>
       <div class="ev-date-full">${dateFr}${heureFmt ? " · " + heureFmt : ""}</div>
       <div class="ev-meta">${lieu || ""}${canManage ? (lieu ? " · " : "") + presentCount + " présents / " + absentCount + " absents" : ""}</div>
-      ${(!isPast && !hasRole("Bénévole")) ? `<div class="toggle-group" style="margin-top:8px;">
+      ${(!isPast && !hasRole("Bénévole")) ? (presIdentity.editable ? `<div class="toggle-group" style="margin-top:8px;">
         <button class="toggle-btn ${val === 'Oui' ? 'present' : ''}" data-event-presence="${id}" data-event-val="1">Présent</button>
         <button class="toggle-btn ${val === 'Non' ? 'absent' : ''}" data-event-presence="${id}" data-event-val="0">Absent</button>
       </div>
-      ${val === 'Non' ? renderJustifBlock(id) : ""}` : ""}
+      ${val === 'Non' ? renderJustifBlock(id) : ""}` : `<div class="muted" style="margin-top:8px; font-size:11.5px;">Présence de ${escapeHtml(presIdentity.nom)} : ${val === "Oui" ? "✅ Présent" : val === "Non" ? "❌ Absent" : "⏳ Pas encore répondu"}</div>`) : ""}
     </div>
     ${canManage ? `<div class="ev-actions">
       ${iconBtn(ICON_EDIT, "ev-edit", `data-edit-event="${id}"`)}
@@ -3836,6 +3868,18 @@ function attachEvents() {
 
   document.querySelectorAll("[data-goto-profil-email]").forEach(el => {
     el.onclick = () => { vibrate(); currentPage = "profil"; render(); };
+  });
+
+  document.querySelectorAll("[data-carousel-scroll]").forEach(el => {
+    el.onclick = () => {
+      vibrate();
+      const wrap = el.closest(".matchcard-carousel-wrap");
+      const track = wrap && wrap.querySelector(".matchcard-carousel");
+      if (!track) return;
+      const card = track.querySelector(".matchcard");
+      const cardWidth = card ? card.offsetWidth + 10 : 200;
+      track.scrollBy({ left: el.dataset.carouselScroll === "right" ? cardWidth : -cardWidth, behavior: "smooth" });
+    };
   });
 
   document.querySelectorAll("[data-toggle-home-section]").forEach(el => {
