@@ -676,8 +676,7 @@ function renderResultsWidget(equipe) {
   const collapseKey = "results_" + equipe;
   const isCollapsed = !!(window.__homeCollapsed && window.__homeCollapsed[collapseKey]);
 
-  return `<div class="card matchcard-wrap">
-    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:${isCollapsed ? "0" : "8px"};">
+  return `<div class="matchcard-wrap">    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:${isCollapsed ? "0" : "8px"};">
       <div class="section-h" style="margin-bottom:0; cursor:pointer;" data-toggle-home-section="${collapseKey}">🤾 Résultats & prochains matchs — ${equipe} ${isCollapsed ? "▾" : "▴"}</div>
       ${!isCollapsed ? `<button class="btn secondary" style="width:auto; padding:6px 12px; font-size:9.5px; margin:0;" data-goto-gallery="${escapeHtml(equipe)}">📷 Photos</button>` : ""}
     </div>
@@ -1431,7 +1430,7 @@ const LOGO_DATA_URI = "icon-512.png";
 const SESSION_KEY = "caisse-noire-session"; // {nom, role, code, equipe}
 const APP_VERSION_KEY = "caisse-noire-app-version";
 const LAST_USER_KEY = "lustuzone-last-user"; // simple mémorisation du dernier nom connecté sur cet appareil (pas le code)
-const APP_VERSION = "2026-07-08-13"; // À incrémenter à chaque mise à jour déployée
+const APP_VERSION = "2026-07-08-14"; // À incrémenter à chaque mise à jour déployée
 const SEASON_START = new Date(2026, 8, 1);  // 1er septembre 2026
 const SEASON_END = new Date(2027, 5, 30);   // 30 juin 2027
 
