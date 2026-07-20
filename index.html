@@ -321,9 +321,45 @@
   @keyframes ldsdr { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
   .matchcard-wrap { position: relative; overflow: hidden; }
   .matchcard-carousel-wrap { position: relative; margin: 0 -2px; }
+  .osteo-tabs { display: flex; gap: 6px; margin-bottom: 12px; }
+  .osteo-tab { flex: 1; text-align: center; padding: 9px; border-radius: 9px; font-size: 10.5px; font-weight: 800; text-transform: uppercase; background: #1a1f30; color: #7a8aad; }
+  .osteo-tab.active { background: rgba(47,107,255,0.2); color: #7fa8ff; }
+  .osteo-carousel { display: flex; gap: 10px; overflow-x: auto; padding: 2px 2px 6px; margin: 0 -2px; scrollbar-width: none; }
+  .osteo-carousel::-webkit-scrollbar { display: none; }
+  .osteo-slot-card { flex: 0 0 160px; background: #11141f; border: 1px solid rgba(47,107,255,0.28); border-radius: 14px; padding: 12px; }
+  .osteo-tag { font-size: 8.5px; font-weight: 800; text-transform: uppercase; padding: 3px 8px; border-radius: 6px; background: rgba(0,212,255,0.15); color: #00d4ff; display: inline-block; margin-bottom: 8px; }
+  .osteo-tag.taken { background: rgba(255,107,107,0.15); color: #ff6b6b; }
+  .osteo-tag.done { background: rgba(154,166,196,0.15); color: #9aa6c4; }
+  .osteo-slot-date2 { font-size: 12.5px; font-weight: 800; color: #fff; margin-bottom: 3px; }
+  .osteo-slot-meta2 { font-size: 9.5px; color: #9db3e0; font-weight: 700; margin-bottom: 8px; line-height: 1.4; }
+  .osteo-mini-btn { display: block; width: 100%; text-align: center; background: var(--grad); color: #fff; font-weight: 800; font-size: 10px; text-transform: uppercase; border-radius: 8px; padding: 8px; }
+  .osteo-mini-btn.cancel { background: rgba(255,107,107,0.15); color: #ff6b6b; }
+  .osteo-card { background: #11141f; border: 1px solid rgba(47,107,255,0.28); border-radius: 14px; padding: 13px; margin-bottom: 10px; }
+  .osteo-manage-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #1a2030; font-size: 12px; }
+  .osteo-manage-row:last-child { border-bottom: none; }
   .matchcard-carousel { display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 2px 26px 4px; scrollbar-width: none; }
   .matchcard-carousel::-webkit-scrollbar { display: none; }
   .matchcard-carousel .matchcard { flex: 0 0 62%; scroll-snap-align: start; margin-bottom: 0; min-height: 200px; padding: 16px 14px; display: flex; flex-direction: column; justify-content: space-between; }
+  .mc2-card { flex: 0 0 62%; scroll-snap-align: start; background: #11141f; border: 1px solid #1c2130; border-radius: 14px; overflow: hidden; position: relative; color: #e8e8ee; }
+  .mc2-datebar { background: #171b25; color: #9db3e0; text-align: center; font-size: 10px; font-weight: 800; padding: 7px; text-transform: uppercase; letter-spacing: 0.6px; }
+  .mc2-datebar.win { color: #33d17a; }
+  .mc2-datebar.loss { color: #ff6b6b; }
+  .mc2-datebar.draw { color: #c3ccde; }
+  .mc2-datebar.upcoming { color: #00d4ff; }
+  .mc2-teams { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 16px 8px; }
+  .mc2-badge { width: 38px; height: 38px; border-radius: 10px; background: #1a1f30; border: 1.5px solid #2a3350; display: flex; align-items: center; justify-content: center; font-size: 10.5px; font-weight: 800; color: #c3ccde; flex-shrink: 0; }
+  .mc2-badge.us { background: var(--grad); border-color: transparent; color: #fff; }
+  .mc2-vs { font-size: 12px; font-weight: 800; color: #7a8aad; }
+  .mc2-card.win { border-color: rgba(51,209,122,0.5); background: linear-gradient(160deg, rgba(51,209,122,0.14), #11141f 60%); }
+  .mc2-card.loss { border-color: rgba(255,107,107,0.4); }
+  .mc2-score { font-size: 17px; font-weight: 900; color: #fff; letter-spacing: -0.3px; white-space: nowrap; }
+  .mc2-score.win { color: #33d17a; }
+  .mc2-dash { color: #5a6b8c; margin: 0 2px; }
+  .mc2-time { text-align: center; font-size: 10.5px; font-weight: 800; color: #7a8aad; padding-bottom: 12px; text-transform: uppercase; letter-spacing: 0.3px; }
+  .mc2-photo-btn { position: absolute; top: 8px; right: 8px; width: 24px; height: 24px; border-radius: 7px; background: rgba(11,13,20,0.85); border: 1px solid #2a3350; font-size: 11px; display: flex; align-items: center; justify-content: center; }
+  .carousel-dots { display: flex; justify-content: center; gap: 5px; margin-top: 8px; }
+  .carousel-dot { width: 5px; height: 5px; border-radius: 50%; background: #2a3040; }
+  .carousel-dot.active { background: var(--blue); width: 14px; border-radius: 3px; }
   .carousel-arrow { position: absolute; top: 50%; transform: translateY(-50%); width: 28px; height: 28px; border-radius: 50%; background: rgba(17,20,31,0.92); border: 1px solid rgba(0,212,255,0.4); color: #00d4ff; font-size: 16px; font-weight: 900; display: flex; align-items: center; justify-content: center; z-index: 5; box-shadow: 0 4px 10px rgba(0,0,0,0.4); line-height: 1; padding-bottom: 2px; }
   .carousel-arrow.left { left: -2px; }
   .carousel-arrow.right { right: -2px; }
@@ -644,7 +680,8 @@ function renderResultsWidget(equipe) {
       <button class="carousel-arrow left" data-carousel-scroll="left" aria-label="Précédent">‹</button>
       <div class="matchcard-carousel">${cards.join("")}</div>
       <button class="carousel-arrow right" data-carousel-scroll="right" aria-label="Suivant">›</button>
-    </div>`}
+    </div>
+    <div class="carousel-dots">${cards.map((c, i) => `<div class="carousel-dot ${i === 0 ? "active" : ""}"></div>`).join("")}</div>`}
   </div>`;
 }
 
@@ -662,60 +699,55 @@ function renderMatchCard(ev, isPast) {
   const awayName = showSplit ? m.away : "";
   const homeIsUs = m.home === "Bischo";
   const awayIsUs = m.away === "Bischo";
-  const photoBtn = `<button class="matchcard-photo-btn" data-open-match-photos="${escapeHtml(date)}|||${escapeHtml(titre)}|||${escapeHtml(equipeRaw || "SM1")}" title="Voir les photos">📷</button>`;
+  const photoBtn = `<button class="mc2-photo-btn" data-open-match-photos="${escapeHtml(date)}|||${escapeHtml(titre)}|||${escapeHtml(equipeRaw || "SM1")}" title="Voir les photos">📷</button>`;
 
-  const sideHtml = (name, isUs) => `<div class="matchcard-side">
-    <div class="matchcard-avatar ${isUs ? "us" : ""}">${escapeHtml(teamAvatarLabel(name))}</div>
-    <div class="matchcard-name ${isUs ? "us" : ""}">${escapeHtml(name)}</div>
-  </div>`;
+  const badge = (name, isUs) => `<div class="mc2-badge ${isUs ? "us" : ""}">${escapeHtml(teamAvatarLabel(name))}</div>`;
 
   if (isPast && score) {
     const parts = String(score).split("-").map(n => parseInt(n, 10));
-    let outcome = "draw", outcomeLabel = "Nul", outcomeIcon = "≡";
     if (parts.length === 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
       const bischoScore = parts[0], advScore = parts[1];
       const leftScore = homeIsUs ? bischoScore : advScore;
       const rightScore = homeIsUs ? advScore : bischoScore;
-      if (bischoScore > advScore) { outcome = "win"; outcomeLabel = "Victoire"; outcomeIcon = "🏆"; }
-      else if (bischoScore < advScore) { outcome = "loss"; outcomeLabel = "Défaite"; outcomeIcon = "💪"; }
-      return `<div class="matchcard result ${outcome}">
-        <div class="matchcard-top"><span class="matchcard-date">${dateLabel}</span><span class="matchcard-venue">${escapeHtml(lieu || "")}</span></div>
-        <div class="matchcard-scoreboard">
-          ${sideHtml(homeName, homeIsUs)}
-          <div class="matchcard-center">
-            <div class="matchcard-bigscore ${outcome}">${leftScore}<span class="matchcard-dash">−</span>${rightScore}</div>
-          </div>
-          ${sideHtml(awayName, awayIsUs)}
+      let bar = "draw", label = "Match nul";
+      if (bischoScore > advScore) { bar = "win"; label = "🏆 Victoire"; }
+      else if (bischoScore < advScore) { bar = "loss"; label = "Défaite"; }
+      return `<div class="mc2-card ${bar}">
+        <div class="mc2-datebar ${bar}">${dateLabel}</div>
+        <div class="mc2-teams">
+          ${badge(homeName, homeIsUs)}
+          <div class="mc2-score ${bar}">${leftScore}<span class="mc2-dash">–</span>${rightScore}</div>
+          ${badge(awayName, awayIsUs)}
         </div>
-        <div class="matchcard-badge ${outcome}">${outcomeIcon} ${outcomeLabel}</div>
+        <div class="mc2-time">${label}</div>
         ${photoBtn}
       </div>`;
     }
   }
 
   if (isPast) {
-    return `<div class="matchcard result">
-      <div class="matchcard-top"><span class="matchcard-date">${dateLabel}</span><span class="matchcard-venue">${escapeHtml(lieu || "")}</span></div>
-      <div class="matchcard-scoreboard">
-        ${sideHtml(homeName, homeIsUs)}
-        <div class="matchcard-center"><div class="matchcard-vsbadge">VS</div></div>
-        ${sideHtml(awayName, awayIsUs)}
+    return `<div class="mc2-card">
+      <div class="mc2-datebar">${dateLabel}</div>
+      <div class="mc2-teams">
+        ${badge(homeName, homeIsUs)}
+        <div class="mc2-vs">VS</div>
+        ${badge(awayName, awayIsUs)}
       </div>
-      <div class="matchcard-badge pending">⏳ Score à venir</div>
+      <div class="mc2-time">⏳ Score à venir</div>
     </div>`;
   }
 
   const now = new Date();
   const diffDays = Math.round((d - now) / (1000 * 60 * 60 * 24));
-  const countdown = diffDays <= 0 ? "Aujourd'hui !" : diffDays === 1 ? "Demain !" : `Dans ${diffDays} jours`;
-  return `<div class="matchcard upcoming">
-    <div class="matchcard-top"><span class="matchcard-date">${dateLabel}</span><span class="matchcard-venue">${escapeHtml(lieu || "")}</span></div>
-    <div class="matchcard-scoreboard">
-      ${sideHtml(homeName, homeIsUs)}
-      <div class="matchcard-center"><div class="matchcard-vsbadge upcoming">VS</div></div>
-      ${sideHtml(awayName, awayIsUs)}
+  const countdown = diffDays <= 0 ? "Aujourd'hui" : diffDays === 1 ? "Demain" : `Dans ${diffDays}j`;
+  return `<div class="mc2-card">
+    <div class="mc2-datebar upcoming">${dateLabel}</div>
+    <div class="mc2-teams">
+      ${badge(homeName, homeIsUs)}
+      <div class="mc2-vs">VS</div>
+      ${badge(awayName, awayIsUs)}
     </div>
-    <div class="matchcard-badge upcoming">🔥 ${countdown} · ${formatHeure(ev) || ""}</div>
+    <div class="mc2-time">${formatHeure(ev) || ""} · ${countdown}</div>
   </div>`;
 }
 
@@ -821,6 +853,195 @@ function goToPhotoView(equipe, date, titre) {
   currentPage = "photoview";
   fetchPhotosForMatch(equipe, date, titre);
 }
+
+// ===================== RDV OSTÉO =====================
+function renderOsteoHomeCard() {
+  const myTeams = myAllowedEquipes();
+  const now = new Date();
+  const reservedSlotIds = new Set(osteoReservations.map(r => r[0]));
+  const nextSlot = osteoSlots.filter(s => osteoSlotDate(s) >= now && !reservedSlotIds.has(s[0]) && (s[4] === "Toutes" || myTeams.includes(s[4])))
+    .sort((a, b) => osteoSlotDate(a) - osteoSlotDate(b))[0];
+  if (!nextSlot) return "";
+  const d = osteoSlotDate(nextSlot);
+  const dateLabel = d.toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short" });
+  return `<div class="card">
+    <div class="section-h" style="margin-top:0;">🩺 RDV Ostéo</div>
+    <div class="osteo-slot-card" style="width:100%; flex:none;">
+      <div class="osteo-tag">${escapeHtml(nextSlot[4])}</div>
+      <div class="osteo-slot-date2">${dateLabel}</div>
+      <div class="osteo-slot-meta2">${escapeHtml(nextSlot[2])}${nextSlot[3] ? " · " + escapeHtml(nextSlot[3]) : ""}</div>
+    </div>
+    <button class="btn secondary" style="margin-top:4px;" data-goto-page="osteo">Voir tous les créneaux</button>
+  </div>`;
+}
+
+function renderOsteoPage() {
+  const isManager = hasRole("Ostéo") || hasRole("Admin");
+  return isManager ? renderOsteoManagerView() : renderOsteoPlayerView();
+}
+
+function osteoSlotDate(slot) {
+  return new Date(slot[1] + "T" + (slot[2] || "00:00"));
+}
+
+function renderOsteoSlotCard(slot, mode, motif) {
+  const [id, date, heure, lieu, equipe] = slot;
+  const d = osteoSlotDate(slot);
+  const dateLabel = d.toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short" });
+  let tagClass = "", tagLabel = equipe;
+  if (mode === "taken") { tagClass = "taken"; tagLabel = "Pris"; }
+  if (mode === "cancel") { tagClass = "taken"; tagLabel = "Réservé"; }
+  if (mode === "done") { tagClass = "done"; tagLabel = "Terminé"; }
+
+  let action = "";
+  if (mode === "reserve") action = `<div class="osteo-mini-btn" data-osteo-reserve="${escapeHtml(id)}">Réserver</div>`;
+  if (mode === "cancel") action = `<div class="osteo-mini-btn cancel" data-osteo-cancel="${escapeHtml(id)}">Annuler</div>`;
+
+  return `<div class="osteo-slot-card">
+    <div class="osteo-tag ${tagClass}">${escapeHtml(tagLabel)}</div>
+    <div class="osteo-slot-date2">${dateLabel}</div>
+    <div class="osteo-slot-meta2">${escapeHtml(heure || "")}${lieu ? "<br/>" + escapeHtml(lieu) : ""}</div>
+    ${motif ? `<div class="muted" style="font-size:9px; margin-bottom:6px;">Motif : ${escapeHtml(motif)}</div>` : ""}
+    ${action}
+  </div>`;
+}
+
+function renderOsteoPlayerView() {
+  const tab = window.__osteoTab || "dispo";
+  const myTeams = myAllowedEquipes();
+  const now = new Date();
+
+  let html = `<div class="page-title">RDV Ostéo</div><div class="page-sub">Avec Eve, ostéopathe du club.</div>`;
+  html += `<div class="osteo-tabs">
+    <button type="button" class="osteo-tab ${tab === 'dispo' ? 'active' : ''}" data-osteo-tab="dispo">Disponibles</button>
+    <button type="button" class="osteo-tab ${tab === 'mes' ? 'active' : ''}" data-osteo-tab="mes">Mes RDV</button>
+  </div>`;
+
+  const reservedSlotIds = new Set(osteoReservations.map(r => r[0]));
+
+  if (tab === "dispo") {
+    const slots = osteoSlots.filter(s => osteoSlotDate(s) >= now && (s[4] === "Toutes" || myTeams.includes(s[4])))
+      .sort((a, b) => osteoSlotDate(a) - osteoSlotDate(b));
+    const available = slots.filter(s => !reservedSlotIds.has(s[0]));
+    const taken = slots.filter(s => reservedSlotIds.has(s[0]));
+
+    html += `<div class="section-h">Créneaux disponibles</div>`;
+    html += available.length === 0
+      ? `<div class="card"><div class="muted">Aucun créneau disponible pour le moment.</div></div>`
+      : `<div class="osteo-carousel">${available.map(s => renderOsteoSlotCard(s, "reserve")).join("")}</div>`;
+
+    if (taken.length > 0) {
+      html += `<div class="section-h">Déjà réservés (par d'autres)</div>`;
+      html += `<div class="osteo-carousel">${taken.map(s => renderOsteoSlotCard(s, "taken")).join("")}</div>`;
+    }
+
+    if (window.__osteoReserveSlotId) {
+      const slot = osteoSlots.find(s => s[0] === window.__osteoReserveSlotId);
+      if (slot) {
+        html += `<div class="add-form">
+          <div class="section-h" style="margin-top:0;">${escapeHtml(slot[1])} · ${escapeHtml(slot[2])}</div>
+          <label class="field-label">Décris ta douleur / le motif (optionnel)</label>
+          <textarea id="osteo-motif" rows="4" placeholder="Ex: douleur à l'épaule droite..."></textarea>
+          <button class="btn" id="osteo-confirm-reserve" style="margin-top:10px;">Confirmer ma réservation</button>
+        </div>`;
+      }
+    }
+  } else {
+    const mine = osteoReservations.filter(r => r[1] === session.nom).map(r => {
+      const slot = osteoSlots.find(s => s[0] === r[0]);
+      return slot ? { slot, motif: r[2] } : null;
+    }).filter(Boolean);
+
+    const upcoming = mine.filter(x => osteoSlotDate(x.slot) >= now).sort((a, b) => osteoSlotDate(a.slot) - osteoSlotDate(b.slot));
+    const past = mine.filter(x => osteoSlotDate(x.slot) < now).sort((a, b) => osteoSlotDate(b.slot) - osteoSlotDate(a.slot));
+
+    html += `<div class="section-h">À venir</div>`;
+    html += upcoming.length === 0
+      ? `<div class="card"><div class="muted">Aucun RDV à venir.</div></div>`
+      : `<div class="osteo-carousel">${upcoming.map(x => renderOsteoSlotCard(x.slot, "cancel", x.motif)).join("")}</div>`;
+
+    html += `<div class="section-h" style="margin-top:16px;">Passés</div>`;
+    html += past.length === 0
+      ? `<div class="card"><div class="muted">Aucun historique.</div></div>`
+      : `<div class="osteo-carousel">${past.slice(0, 8).map(x => renderOsteoSlotCard(x.slot, "done")).join("")}</div>`;
+  }
+
+  return html;
+}
+
+function renderOsteoManagerView() {
+  let html = `<div class="page-title">RDV Ostéo</div><div class="page-sub">Gestion des créneaux.</div>`;
+
+  html += `<button class="btn add-btn-primary" id="toggle-add-osteo-slot">${window.__showAddOsteoSlot ? "− Fermer" : "+ Nouveau créneau"}</button>`;
+  if (window.__showAddOsteoSlot) {
+    const recurrent = !!window.__osteoSlotRecurrent;
+    html += `<div class="add-form">
+      <label class="field-label">Équipe concernée</label>
+      <select id="osteo-slot-equipe">
+        ${TEAMS.map(t => `<option value="${t}">${t}</option>`).join("")}
+        <option value="Toutes">Toutes</option>
+      </select>
+      <label class="field-label">Date</label>
+      <input id="osteo-slot-date" type="date" />
+      <label class="field-label">Heure</label>
+      <input id="osteo-slot-heure" type="time" />
+      <label class="field-label">Lieu</label>
+      <input id="osteo-slot-lieu" type="text" placeholder="Ex: Lustucru Arena" value="Lustucru Arena" />
+      <label style="display:flex; align-items:center; gap:8px; font-size:11px; color:#c3ccde; font-weight:700; margin-top:10px;">
+        <input type="checkbox" id="osteo-slot-recurrent" ${recurrent ? "checked" : ""} style="width:16px; height:16px;"/> Créneau récurrent (chaque semaine)
+      </label>
+      ${recurrent ? `<label class="field-label" style="margin-top:8px;">Nombre de semaines</label>
+      <select id="osteo-slot-weeks">
+        <option value="4">4 semaines</option>
+        <option value="8" selected>8 semaines</option>
+        <option value="12">12 semaines</option>
+      </select>` : ""}
+      <label style="display:flex; align-items:center; gap:8px; font-size:11px; color:#c3ccde; font-weight:700; margin-top:10px;">
+        <input type="checkbox" id="osteo-slot-actu" checked style="width:16px; height:16px;"/> Publier une actualité pour l'annoncer
+      </label>
+      <button class="btn" id="osteo-slot-submit" style="margin-top:10px;">Créer le créneau</button>
+    </div>`;
+  }
+
+  const now = new Date();
+  const upcoming = osteoSlots.filter(s => osteoSlotDate(s) >= now).sort((a, b) => osteoSlotDate(a) - osteoSlotDate(b));
+
+  html += `<div class="section-h">Créneaux à venir</div>`;
+  if (upcoming.length === 0) {
+    html += `<div class="card"><div class="muted">Aucun créneau à venir.</div></div>`;
+  } else {
+    upcoming.forEach(s => {
+      const [id, date, heure, lieu, equipe] = s;
+      const resa = osteoReservations.find(r => r[0] === id);
+      const d = osteoSlotDate(s);
+      const dateLabel = d.toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short" });
+      html += `<div class="osteo-card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <div><div style="font-size:13px; font-weight:800; color:#fff;">${dateLabel} · ${escapeHtml(heure)}</div><div class="muted" style="font-size:10px;">${escapeHtml(lieu)} · ${escapeHtml(equipe)}</div></div>
+          <div class="osteo-tag ${resa ? 'taken' : ''}">${resa ? 'Pris' : 'Libre'}</div>
+        </div>
+        ${resa ? `
+          <div class="muted" style="font-size:11px; margin-bottom:6px;">Réservé par <span style="color:#fff; font-weight:700;">${escapeHtml(resa[1])}</span>${resa[2] ? " — Motif : " + escapeHtml(resa[2]) : ""}</div>
+          <div class="expand-toggle" data-osteo-reassign="${escapeHtml(id)}" style="color:#ffb43c;">Annuler et réassigner en priorité...</div>
+          ${window.__osteoReassignId === id ? renderOsteoReassignForm(id) : ""}
+        ` : ""}
+        <div class="expand-toggle" data-osteo-delete-slot="${escapeHtml(id)}" style="color:#ff6b6b; margin-top:6px;">Supprimer ce créneau</div>
+      </div>`;
+    });
+  }
+  return html;
+}
+
+function renderOsteoReassignForm(slotId) {
+  const allPlayers = comptes.slice(1).filter(c => rowHasRole(c, "Joueur")).map(c => c[0]);
+  return `<div style="margin-top:8px;">
+    <select id="osteo-reassign-select">
+      ${allPlayers.map(p => `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join("")}
+    </select>
+    <button class="btn" style="margin-top:6px;" data-osteo-reassign-confirm="${escapeHtml(slotId)}">Confirmer la réassignation</button>
+  </div>`;
+}
+
 
 // ===================== CONSIGNES D'UTILISATION =====================
 function guideSections() {
@@ -1004,6 +1225,57 @@ async function fetchSupportHistory() {
   render();
 }
 
+async function reserveOsteoSlotApi(slotId, motif) {
+  osteoReservations.push([slotId, session.nom, motif]); // optimiste
+  window.__osteoReserveSlotId = null;
+  render();
+  try {
+    const params = new URLSearchParams({ action: "reserveOsteoSlot", slotId, motif, authNom: session.nom, authCode: session.code });
+    const res = await fetch(`${GOOGLE_SCRIPT_URL}?${params.toString()}`);
+    const data = await res.json();
+    if (!data.ok) { await fetchAll(); if (data.error === "already_taken") alert("Ce créneau vient d'être réservé par quelqu'un d'autre."); }
+  } catch (err) { isOnline = false; render(); }
+}
+
+async function cancelOsteoReservationApi(slotId) {
+  osteoReservations = osteoReservations.filter(r => !(r[0] === slotId && r[1] === session.nom)); // optimiste
+  render();
+  try {
+    const params = new URLSearchParams({ action: "cancelOsteoReservation", slotId, authNom: session.nom, authCode: session.code });
+    await fetch(`${GOOGLE_SCRIPT_URL}?${params.toString()}`);
+  } catch (err) { isOnline = false; render(); }
+}
+
+async function addOsteoSlotApi(payload) {
+  window.__showAddOsteoSlot = false;
+  window.__osteoSlotRecurrent = false;
+  render();
+  try {
+    const params = new URLSearchParams({ action: "addOsteoSlot", authNom: session.nom, authCode: session.code, ...payload });
+    await fetch(`${GOOGLE_SCRIPT_URL}?${params.toString()}`);
+    await fetchAll();
+  } catch (err) { isOnline = false; render(); }
+}
+
+async function reassignOsteoSlotApi(slotId, newNom) {
+  window.__osteoReassignId = null;
+  render();
+  try {
+    const params = new URLSearchParams({ action: "reassignOsteoSlotPriority", slotId, newNom, authNom: session.nom, authCode: session.code });
+    await fetch(`${GOOGLE_SCRIPT_URL}?${params.toString()}`);
+    await fetchAll();
+  } catch (err) { isOnline = false; render(); }
+}
+
+async function deleteOsteoSlotApi(slotId) {
+  osteoSlots = osteoSlots.filter(s => s[0] !== slotId); // optimiste
+  render();
+  try {
+    const params = new URLSearchParams({ action: "deleteOsteoSlot", slotId, authNom: session.nom, authCode: session.code });
+    await fetch(`${GOOGLE_SCRIPT_URL}?${params.toString()}`);
+  } catch (err) { isOnline = false; render(); }
+}
+
 async function notifyPaymentClaimApi(montant) {
   window.__paymentNotifySending = true;
   render();
@@ -1147,7 +1419,7 @@ const LOGO_DATA_URI = "icon-512.png";
 const SESSION_KEY = "caisse-noire-session"; // {nom, role, code, equipe}
 const APP_VERSION_KEY = "caisse-noire-app-version";
 const LAST_USER_KEY = "lustuzone-last-user"; // simple mémorisation du dernier nom connecté sur cet appareil (pas le code)
-const APP_VERSION = "2026-07-08-06"; // À incrémenter à chaque mise à jour déployée
+const APP_VERSION = "2026-07-08-08"; // À incrémenter à chaque mise à jour déployée
 const SEASON_START = new Date(2026, 8, 1);  // 1er septembre 2026
 const SEASON_END = new Date(2027, 5, 30);   // 30 juin 2027
 
@@ -1160,6 +1432,8 @@ let presenceEvenements = {}; // { eventId_nom: "Oui"/"Non" }
 let presenceJustifications = {}; // { eventId_nom: "texte du motif" }
 let actualites = []; // [[id, titre, scope, texte, auteur, date], ...] (+ header row)
 let covoiturage = []; // [[eventId, nom, jeConduit, places, besoinPlace], ...] (+ header row)
+let osteoSlots = []; // [[id, date, heure, lieu, equipe, recurrentId], ...] (+ header row)
+let osteoReservations = []; // [[slotId, nom, motif], ...] (+ header row)
 let salariesState = { loading: false, loaded: false, error: null, currentFolder: null, folders: [], files: [], breadcrumb: [] };
 let salariesCache = {}; // folderId -> {folders, files, currentFolder} — permet un affichage instantané en revenant sur un dossier déjà visité
 
@@ -1286,7 +1560,7 @@ function escapeHtml(str) {
 }
 
 function isFormOpen() {
-  return !!showAddEvent || !!window.__editingEvenementId || !!window.__editingPaiementId || !!window.__showAddPaiement || !!window.__showChangeCode || !!window.__showGenerateTrainings || !!window.__profilPosteAdding || (window.__profilPosteEditIndex !== null && window.__profilPosteEditIndex !== undefined) || !!window.__showAddActualite || !!window.__cnEditPlayer || !!window.__showSalariesAdd || !!window.__salariesPreviewFile || !!window.__salariesUploading || !!window.__profilEmailEditing || currentPage === "support";
+  return !!showAddEvent || !!window.__editingEvenementId || !!window.__editingPaiementId || !!window.__showAddPaiement || !!window.__showChangeCode || !!window.__showGenerateTrainings || !!window.__profilPosteAdding || (window.__profilPosteEditIndex !== null && window.__profilPosteEditIndex !== undefined) || !!window.__showAddActualite || !!window.__cnEditPlayer || !!window.__showSalariesAdd || !!window.__salariesPreviewFile || !!window.__salariesUploading || !!window.__profilEmailEditing || currentPage === "support" || currentPage === "osteo";
 }
 
 async function fetchAll() {
@@ -1303,6 +1577,8 @@ async function fetchAll() {
     evenements = (data.evenements || []).slice(1).filter(r => r[0]);
     actualites = (data.actualites || []).slice(1).filter(r => r[0]);
     covoiturage = (data.covoiturage || []).slice(1).filter(r => r[0]);
+    osteoSlots = (data.osteoSlots || []).slice(1).filter(r => r[0]);
+    osteoReservations = (data.osteoReservations || []).slice(1).filter(r => r[0]);
     const parsedPE = parsePresenceEvenements(data.presenceEvenements || []);
     presenceEvenements = parsedPE.p;
     presenceJustifications = parsedPE.j;
@@ -1864,7 +2140,7 @@ function eventEquipe(ev) {
 }
 function getVisibleEvenements() {
   let list = evenements;
-  if (session && !hasRole("Admin")) {
+  if (session && !hasRole("Admin") && !hasRole("Ostéo")) {
     const myEquipe = primaryEquipe();
     list = list.filter(ev => {
       const eq = eventEquipe(ev);
@@ -1885,7 +2161,7 @@ function sortedVisibleEvenements() {
 // Équipes qu'un compte peut consulter : toutes celles de ses rôles cumulés (ex: un joueur
 // SM1 qui est aussi coach U17 voit les deux), et toutes pour l'Admin.
 function myAllowedEquipes() {
-  if (hasRole("Admin")) return TEAMS.slice();
+  if (hasRole("Admin") || hasRole("Ostéo")) return TEAMS.slice();
   const set = new Set();
   (session.roles || []).forEach(r => {
     if (TEAMS.includes(r.equipe)) set.add(r.equipe);
@@ -2086,6 +2362,7 @@ function render() {
   else if (currentPage === "photoview") html += renderPhotoViewPage();
   else if (currentPage === "guide") html += renderGuidePage();
   else if (currentPage === "support") html += renderSupportPage();
+  else if (currentPage === "osteo") html += renderOsteoPage();
 
   html += `<div class="bottom-nav">`;
   html += mainTabs.map(t =>
@@ -2156,6 +2433,7 @@ const NAV_ICONS = {
   actualites: '<path d="M3 11l18-5v12L3 14v-3z"/><path d="M7 14v5a2 2 0 002 2h1"/>',
   salaries: '<path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/>',
   covoiturage: '<path d="M5 11l1.5-4.5A2 2 0 018.4 5h7.2a2 2 0 011.9 1.5L19 11M3 11h18v6a1 1 0 01-1 1h-1a1 1 0 01-1-1v-1H6v1a1 1 0 01-1 1H4a1 1 0 01-1-1v-6z"/><circle cx="7.5" cy="16.5" r="1.5"/><circle cx="16.5" cy="16.5" r="1.5"/>',
+  osteo: '<path d="M12 21s-8-5-8-11a4 4 0 018-2 4 4 0 018 2c0 6-8 11-8 11z"/>',
 };
 
 function getTabsForRole() {
@@ -2176,13 +2454,15 @@ function getTabsForRole() {
   if (hasRole("Admin") || ((hasRole("Joueur") || hasRole("Coach")) && isInTeam("SM1"))) extraCandidates.push({ id: "paiements", label: "Paiements", main: false });
   if (hasRole("Salarié") || hasRole("Admin")) extraCandidates.push({ id: "salaries", label: "Espace salariés", main: false });
   const hasCovoit = hasRole("Joueur") || hasRole("Coach") || hasRole("Parent") || hasRole("Admin");
+  const hasOsteo = true; // accessible à tout le monde (réservation de créneaux)
 
   // S'il y a la place, tout s'affiche directement dans la barre — Covoiturage juste avant
   // Profil, et Profil toujours tout à droite en dernier.
-  const totalIfAllMain = tabs.length + extraCandidates.length + (hasCovoit ? 1 : 0) + 1;
+  const totalIfAllMain = tabs.length + extraCandidates.length + (hasCovoit ? 1 : 0) + (hasOsteo ? 1 : 0) + 1;
   if (totalIfAllMain <= 6) {
     extraCandidates.forEach(e => tabs.push({ ...e, main: true }));
     if (hasCovoit) tabs.push({ id: "covoiturage", label: "Covoiturage", main: true });
+    if (hasOsteo) tabs.push({ id: "osteo", label: "RDV Ostéo", main: true });
     tabs.push({ id: "profil", label: "Profil", main: true });
     return tabs;
   }
@@ -2194,6 +2474,7 @@ function getTabsForRole() {
 
   const extra = extraCandidates.slice();
   if (hasCovoit) extra.push({ id: "covoiturage", label: "Covoiturage", main: false });
+  if (hasOsteo) extra.push({ id: "osteo", label: "RDV Ostéo", main: false });
 
   // Un seul élément dans "Plus" -> inutile de le cacher derrière un clic, on l'affiche directement.
   if (extra.length === 1) {
@@ -2434,6 +2715,7 @@ function renderHome() {
   }
 
   myScorencoTeams().forEach(t => { html += renderResultsWidget(t); });
+  html += renderOsteoHomeCard();
 
   const weekEvents = getCurrentWeekEvents().filter(ev => !nextEv || ev[0] !== nextEv[0]);
   html += `<div class="section-h">Cette semaine</div>`;
@@ -3458,7 +3740,7 @@ const ACTU_SCOPES = ["Générale", ...TEAMS];
 
 function visibleActualites() {
   let list = actualites;
-  if (!hasRole("Admin") && !hasRole("Salarié")) {
+  if (!hasRole("Admin") && !hasRole("Salarié") && !hasRole("Ostéo")) {
     list = list.filter(a => a[2] === "Générale" || a[2] === (primaryEquipe()));
   }
   return list.slice().sort((a, b) => String(b[5] || "").localeCompare(String(a[5] || "")));
@@ -3471,7 +3753,7 @@ function scopesForActuCreation() {
 }
 
 function actuFilterOptions() {
-  if (hasRole("Admin") || hasRole("Salarié")) return ["Générale", ...TEAMS];
+  if (hasRole("Admin") || hasRole("Salarié") || hasRole("Ostéo")) return ["Générale", ...TEAMS];
   return ["Générale", primaryEquipe()];
 }
 
@@ -3888,13 +4170,23 @@ function attachEvents() {
     el.onclick = () => { vibrate(); currentPage = "profil"; render(); };
   });
 
+  document.querySelectorAll(".matchcard-carousel").forEach(track => {
+    const dotsWrap = track.closest(".card")?.querySelector(".carousel-dots");
+    if (!dotsWrap) return;
+    track.addEventListener("scroll", () => {
+      const cardWidth = track.querySelector(".mc2-card")?.offsetWidth || 1;
+      const idx = Math.round(track.scrollLeft / (cardWidth + 10));
+      dotsWrap.querySelectorAll(".carousel-dot").forEach((dot, i) => dot.classList.toggle("active", i === idx));
+    }, { passive: true });
+  });
+
   document.querySelectorAll("[data-carousel-scroll]").forEach(el => {
     el.onclick = () => {
       vibrate();
       const wrap = el.closest(".matchcard-carousel-wrap");
       const track = wrap && wrap.querySelector(".matchcard-carousel");
       if (!track) return;
-      const card = track.querySelector(".matchcard");
+      const card = track.querySelector(".mc2-card");
       const cardWidth = card ? card.offsetWidth + 10 : 200;
       track.scrollBy({ left: el.dataset.carouselScroll === "right" ? cardWidth : -cardWidth, behavior: "smooth" });
     };
@@ -3916,6 +4208,76 @@ function attachEvents() {
 
   const exportCalendarBtn = document.getElementById("export-calendar-btn");
   if (exportCalendarBtn) exportCalendarBtn.onclick = () => { vibrate(); exportCalendarICS(); };
+
+  document.querySelectorAll("[data-osteo-tab]").forEach(el => {
+    el.onclick = () => { vibrate(); window.__osteoTab = el.dataset.osteoTab; window.__osteoReserveSlotId = null; render(); };
+  });
+
+  document.querySelectorAll("[data-osteo-reserve]").forEach(el => {
+    el.onclick = () => { vibrate(); window.__osteoReserveSlotId = el.dataset.osteoReserve; render(); };
+  });
+
+  const osteoConfirmReserve = document.getElementById("osteo-confirm-reserve");
+  if (osteoConfirmReserve) osteoConfirmReserve.onclick = () => {
+    const motif = (document.getElementById("osteo-motif").value || "").trim();
+    vibrate();
+    reserveOsteoSlotApi(window.__osteoReserveSlotId, motif);
+  };
+
+  document.querySelectorAll("[data-osteo-cancel]").forEach(el => {
+    el.onclick = () => { vibrate(); cancelOsteoReservationApi(el.dataset.osteoCancel); };
+  });
+
+  const toggleAddOsteoSlot = document.getElementById("toggle-add-osteo-slot");
+  if (toggleAddOsteoSlot) toggleAddOsteoSlot.onclick = () => {
+    vibrate();
+    window.__showAddOsteoSlot = !window.__showAddOsteoSlot;
+    render();
+  };
+
+  const osteoSlotRecurrent = document.getElementById("osteo-slot-recurrent");
+  if (osteoSlotRecurrent) osteoSlotRecurrent.onchange = (e) => {
+    window.__osteoSlotRecurrent = e.target.checked;
+    render();
+  };
+
+  const osteoSlotSubmit = document.getElementById("osteo-slot-submit");
+  if (osteoSlotSubmit) osteoSlotSubmit.onclick = () => {
+    const date = document.getElementById("osteo-slot-date").value;
+    const heure = document.getElementById("osteo-slot-heure").value;
+    const lieu = document.getElementById("osteo-slot-lieu").value;
+    const equipe = document.getElementById("osteo-slot-equipe").value;
+    if (!date || !heure) { alert("Merci de renseigner au moins la date et l'heure."); return; }
+    const weeksEl = document.getElementById("osteo-slot-weeks");
+    const semaines = (window.__osteoSlotRecurrent && weeksEl) ? weeksEl.value : "1";
+    const actuEl = document.getElementById("osteo-slot-actu");
+    const publierActualite = (actuEl && actuEl.checked) ? "1" : "0";
+    vibrate();
+    addOsteoSlotApi({ date, heure, lieu, equipe, semaines, publierActualite });
+  };
+
+  document.querySelectorAll("[data-osteo-reassign]").forEach(el => {
+    el.onclick = () => { vibrate(); window.__osteoReassignId = el.dataset.osteoReassign; render(); };
+  });
+
+  document.querySelectorAll("[data-osteo-reassign-confirm]").forEach(el => {
+    el.onclick = () => {
+      const slotId = el.dataset.osteoReassignConfirm;
+      const select = document.getElementById("osteo-reassign-select");
+      const newNom = select ? select.value : "";
+      if (!newNom) return;
+      vibrate();
+      reassignOsteoSlotApi(slotId, newNom);
+    };
+  });
+
+  document.querySelectorAll("[data-osteo-delete-slot]").forEach(el => {
+    el.onclick = () => {
+      if (!confirm("Supprimer ce créneau ?")) return;
+      vibrate();
+      deleteOsteoSlotApi(el.dataset.osteoDeleteSlot);
+    };
+  });
 
   const notifyPaymentBtn = document.getElementById("notify-payment-btn");
   if (notifyPaymentBtn) notifyPaymentBtn.onclick = () => {
