@@ -1131,7 +1131,7 @@ const LOGO_DATA_URI = "icon-512.png";
 const SESSION_KEY = "caisse-noire-session"; // {nom, role, code, equipe}
 const APP_VERSION_KEY = "caisse-noire-app-version";
 const LAST_USER_KEY = "lustuzone-last-user"; // simple mémorisation du dernier nom connecté sur cet appareil (pas le code)
-const APP_VERSION = "2026-07-08-03"; // À incrémenter à chaque mise à jour déployée
+const APP_VERSION = "2026-07-08-04"; // À incrémenter à chaque mise à jour déployée
 const SEASON_START = new Date(2026, 8, 1);  // 1er septembre 2026
 const SEASON_END = new Date(2027, 5, 30);   // 30 juin 2027
 
@@ -3643,9 +3643,11 @@ function renderPaiementsPage() {
   // soit aussi Admin ou non — avant, un compte Admin+Joueur ne voyait jamais son propre bouton payer.
   if (isPlayer) {
     const reste = resteAPayer(session.nom);
+    const dejaPaye = totalPaye(session.nom);
     html += `<div class="pay-summary">
       <div class="pay-summary-label">${reste > 0 ? "Ta cotisation restante" : "Cotisation à jour"}</div>
       <div class="pay-summary-val" style="color:${reste > 0 ? '#ffd166' : '#33d17a'};">${fmt(reste)} €</div>
+      <div class="cn-hero-sub">${fmt(dejaPaye)} € déjà payé</div>
     </div>`;
     if (reste > 0) {
       if (PAYPAL_ME_USERNAME) {
