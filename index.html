@@ -40,9 +40,10 @@
     background-repeat: repeat-y;
   }
   .header { display: flex; align-items: center; gap: 14px; margin: -12px -12px 16px; padding: calc(env(safe-area-inset-top) + 16px) 18px 20px; background: var(--grad); border-radius: 20px 20px 22px 22px; position: relative; }
-  .header img { height: 56px; width: 56px; border-radius: 15px; box-shadow: 0 4px 14px rgba(0,0,0,0.3); position: relative; z-index: 2; }
-  .header .title { font-family: var(--font-disp); font-size: 24px; font-weight: 700; color: #fff; letter-spacing: 0.2px; line-height: 1; position: relative; z-index: 2; }
-  .header .subtitle { font-size: 11px; color: rgba(255,255,255,0.85); text-transform: uppercase; letter-spacing: 1.3px; font-weight: 700; margin-top: 4px; position: relative; z-index: 2; }
+  .header img { height: 56px; width: 56px; border-radius: 15px; box-shadow: 0 4px 14px rgba(0,0,0,0.3); position: relative; z-index: 2; flex-shrink: 0; }
+  .hdr-textwrap { min-width: 0; overflow: hidden; }
+  .header .title { font-family: var(--font-disp); font-size: 24px; font-weight: 700; color: #fff; letter-spacing: 0.2px; line-height: 1; position: relative; z-index: 2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .header .subtitle { font-size: 11px; color: rgba(255,255,255,0.85); text-transform: uppercase; letter-spacing: 1.3px; font-weight: 700; margin-top: 4px; position: relative; z-index: 2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .header.home-header img { height: 60px; width: 60px; border-radius: 16px; }
   .header.home-header .title { font-size: 26px; }
   .header.home-header .subtitle { font-size: 11.5px; }
@@ -322,7 +323,7 @@
   .ldsdr { display: inline-block; width: 60px; height: 60px; }
   .ldsdr:after { content: " "; display: block; width: 48px; height: 48px; margin: 6px; border-radius: 50%; border: 5px solid #1E457B; border-color: #1E457B transparent; animation: ldsdr 1.2s linear infinite; }
   @keyframes ldsdr { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-  .matchcard-wrap { position: relative; overflow: hidden; }
+  .matchcard-wrap { position: relative; overflow: hidden; margin-bottom: 14px; }
   .matchcard-carousel-wrap { position: relative; margin: 0 -2px; }
   .osteo-tabs { display: flex; gap: 6px; margin-bottom: 12px; }
   .osteo-tab { flex: 1; text-align: center; padding: 9px; border-radius: 9px; font-size: 10.5px; font-weight: 800; text-transform: uppercase; background: #1a1f30; color: #e4e8f2; }
@@ -870,12 +871,15 @@ function renderOsteoHomeCard() {
   const dateLabel = d.toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short" });
   return `<div class="card">
     <div class="section-h" style="margin-top:0;">🩺 RDV Ostéo</div>
-    <div class="osteo-slot-card" style="width:100%; flex:none;">
-      <div class="osteo-tag">${escapeHtml(nextSlot[4])}</div>
-      <div class="osteo-slot-date2">${dateLabel}</div>
-      <div class="osteo-slot-meta2">${escapeHtml(nextSlot[2])}${nextSlot[3] ? " · " + escapeHtml(nextSlot[3]) : ""}</div>
+    <div class="mc2-card" style="width:100%; flex:none;">
+      <div class="mc2-datebar">${dateLabel.toUpperCase()}</div>
+      <div style="padding:14px 12px; text-align:center;">
+        <div style="font-size:9px; font-weight:800; text-transform:uppercase; letter-spacing:0.5px; color:#e4e8f2; margin-bottom:4px;">${escapeHtml(nextSlot[4])}</div>
+        <div style="font-size:14px; font-weight:700; color:#fff;">${escapeHtml(nextSlot[2])}${nextSlot[3] ? " · " + escapeHtml(nextSlot[3]) : ""}</div>
+      </div>
+      <button class="osteo-mini-btn" style="border-radius:0; margin:0;" data-osteo-reserve-home="${escapeHtml(nextSlot[0])}">Réserver</button>
     </div>
-    <button class="btn secondary" style="margin-top:4px;" data-goto-page="osteo">Voir tous les créneaux</button>
+    <button class="btn secondary" style="margin-top:8px;" data-goto-page="osteo">Voir tous les créneaux</button>
   </div>`;
 }
 
@@ -1430,7 +1434,7 @@ const LOGO_DATA_URI = "icon-512.png";
 const SESSION_KEY = "caisse-noire-session"; // {nom, role, code, equipe}
 const APP_VERSION_KEY = "caisse-noire-app-version";
 const LAST_USER_KEY = "lustuzone-last-user"; // simple mémorisation du dernier nom connecté sur cet appareil (pas le code)
-const APP_VERSION = "2026-07-08-17"; // À incrémenter à chaque mise à jour déployée
+const APP_VERSION = "2026-07-08-20"; // À incrémenter à chaque mise à jour déployée
 const SEASON_START = new Date(2026, 8, 1);  // 1er septembre 2026
 const SEASON_END = new Date(2027, 5, 30);   // 30 juin 2027
 
@@ -2318,7 +2322,7 @@ function render() {
 
   let html = `<div class="header ${currentPage === 'home' ? 'home-header' : ''}">
     <img src="${LOGO_DATA_URI}" alt="Logo LustuZone"/>
-    <div><div class="title">LustuZone</div><div class="subtitle">App de Gestion</div></div>
+    <div class="hdr-textwrap"><div class="title">LustuZone</div><div class="subtitle">App de Gestion</div></div>
     <div class="spacer"></div>
     <div class="avatar-wrap">
       <div class="avatar-btn" id="avatar-btn">${getInitials(session.nom)}</div>
@@ -4226,6 +4230,16 @@ function attachEvents() {
 
   document.querySelectorAll("[data-osteo-reserve]").forEach(el => {
     el.onclick = () => { vibrate(); window.__osteoReserveSlotId = el.dataset.osteoReserve; render(); };
+  });
+
+  document.querySelectorAll("[data-osteo-reserve-home]").forEach(el => {
+    el.onclick = () => {
+      vibrate();
+      currentPage = "osteo";
+      window.__osteoTab = "dispo";
+      window.__osteoReserveSlotId = el.dataset.osteoReserveHome;
+      render();
+    };
   });
 
   const osteoConfirmReserve = document.getElementById("osteo-confirm-reserve");
