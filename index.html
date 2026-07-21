@@ -340,6 +340,10 @@
   .osteo-mini-btn.cancel { background: rgba(255,107,107,0.15); color: #ff6b6b; }
   .osteo-card { background: #11141f; border: 1px solid rgba(47,107,255,0.28); border-radius: 14px; padding: 13px; margin-bottom: 10px; }
   .osteo-manage-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #1a2030; font-size: 12px; }
+  .osteo-manage-btn { display: block; width: 100%; text-align: center; padding: 9px; border-radius: 9px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.3px; background: #1a1f30; border: 1px solid #2a3350; color: #e4e8f2; }
+  .osteo-manage-btn.priority { background: rgba(255,180,60,0.12); border-color: rgba(255,180,60,0.4); color: #ffb43c; }
+  .osteo-manage-btn.danger { background: rgba(255,107,107,0.1); border-color: rgba(255,107,107,0.35); color: #ff6b6b; }
+  .osteo-manage-btn:active { opacity: 0.75; }
   .osteo-manage-row:last-child { border-bottom: none; }
   .matchcard-carousel { display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; padding: 2px 26px 4px; scrollbar-width: none; }
   .matchcard-carousel::-webkit-scrollbar { display: none; }
@@ -885,7 +889,22 @@ function renderOsteoHomeCard() {
 
 function renderOsteoPage() {
   const isManager = hasRole("Ostéo") || hasRole("Admin");
-  return isManager ? renderOsteoManagerView() : renderOsteoPlayerView();
+  const tab = (window.__osteoTab === "mes") ? "mes" : "dispo";
+
+  let html = `<div class="page-title">RDV Ostéo</div><div class="page-sub">Avec Eve, ostéopathe du club.</div>`;
+  html += `<div class="osteo-tabs">
+    <button type="button" class="osteo-tab ${tab === 'dispo' ? 'active' : ''}" data-osteo-tab="dispo">Disponibles</button>
+    <button type="button" class="osteo-tab ${tab === 'mes' ? 'active' : ''}" data-osteo-tab="mes">Mes RDV</button>
+  </div>`;
+
+  html += renderOsteoPlayerView(tab);
+
+  if (isManager) {
+    html += `<div class="section-h" style="margin-top:22px;">Gestion des créneaux</div>`;
+    html += renderOsteoManagerView();
+  }
+
+  return html;
 }
 
 function osteoSlotDate(slot) {
@@ -914,16 +933,11 @@ function renderOsteoSlotCard(slot, mode, motif) {
   </div>`;
 }
 
-function renderOsteoPlayerView() {
-  const tab = window.__osteoTab || "dispo";
+function renderOsteoPlayerView(tab) {
   const myTeams = myAllowedEquipes();
   const now = new Date();
 
-  let html = `<div class="page-title">RDV Ostéo</div><div class="page-sub">Avec Eve, ostéopathe du club.</div>`;
-  html += `<div class="osteo-tabs">
-    <button type="button" class="osteo-tab ${tab === 'dispo' ? 'active' : ''}" data-osteo-tab="dispo">Disponibles</button>
-    <button type="button" class="osteo-tab ${tab === 'mes' ? 'active' : ''}" data-osteo-tab="mes">Mes RDV</button>
-  </div>`;
+  let html = "";
 
   const reservedSlotIds = new Set(osteoReservations.map(r => r[0]));
 
@@ -978,7 +992,7 @@ function renderOsteoPlayerView() {
 }
 
 function renderOsteoManagerView() {
-  let html = `<div class="page-title">RDV Ostéo</div><div class="page-sub">Gestion des créneaux.</div>`;
+  let html = "";
 
   html += `<button class="btn add-btn-primary" id="toggle-add-osteo-slot">${window.__showAddOsteoSlot ? "− Fermer" : "+ Nouveau créneau"}</button>`;
   if (window.__showAddOsteoSlot) {
@@ -1029,11 +1043,10 @@ function renderOsteoManagerView() {
           <div class="osteo-tag ${resa ? 'taken' : ''}">${resa ? 'Pris' : 'Libre'}</div>
         </div>
         ${resa ? `
-          <div class="muted" style="font-size:11px; margin-bottom:6px;">Réservé par <span style="color:#fff; font-weight:700;">${escapeHtml(resa[1])}</span>${resa[2] ? " — Motif : " + escapeHtml(resa[2]) : ""}</div>
-          <div class="expand-toggle" data-osteo-reassign="${escapeHtml(id)}" style="color:#ffb43c;">Annuler et réassigner en priorité...</div>
-          ${window.__osteoReassignId === id ? renderOsteoReassignForm(id) : ""}
+          <div class="muted" style="font-size:11px; margin-bottom:8px;">Réservé par <span style="color:#fff; font-weight:700;">${escapeHtml(resa[1])}</span>${resa[2] ? " — Motif : " + escapeHtml(resa[2]) : ""}</div>
+          ${window.__osteoReassignId === id ? renderOsteoReassignForm(id) : `<button type="button" class="osteo-manage-btn priority" data-osteo-reassign="${escapeHtml(id)}">Réassigner en priorité</button>`}
         ` : ""}
-        <div class="expand-toggle" data-osteo-delete-slot="${escapeHtml(id)}" style="color:#ff6b6b; margin-top:6px;">Supprimer ce créneau</div>
+        <button type="button" class="osteo-manage-btn danger" style="margin-top:8px;" data-osteo-delete-slot="${escapeHtml(id)}">Supprimer ce créneau</button>
       </div>`;
     });
   }
@@ -1434,7 +1447,7 @@ const LOGO_DATA_URI = "icon-512.png";
 const SESSION_KEY = "caisse-noire-session"; // {nom, role, code, equipe}
 const APP_VERSION_KEY = "caisse-noire-app-version";
 const LAST_USER_KEY = "lustuzone-last-user"; // simple mémorisation du dernier nom connecté sur cet appareil (pas le code)
-const APP_VERSION = "2026-07-08-22"; // À incrémenter à chaque mise à jour déployée
+const APP_VERSION = "2026-07-08-24"; // À incrémenter à chaque mise à jour déployée
 const SEASON_START = new Date(2026, 8, 1);  // 1er septembre 2026
 const SEASON_END = new Date(2027, 5, 30);   // 30 juin 2027
 
@@ -2448,7 +2461,7 @@ const NAV_ICONS = {
   actualites: '<path d="M3 11l18-5v12L3 14v-3z"/><path d="M7 14v5a2 2 0 002 2h1"/>',
   salaries: '<path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/>',
   covoiturage: '<path d="M5 11l1.5-4.5A2 2 0 018.4 5h7.2a2 2 0 011.9 1.5L19 11M3 11h18v6a1 1 0 01-1 1h-1a1 1 0 01-1-1v-1H6v1a1 1 0 01-1 1H4a1 1 0 01-1-1v-6z"/><circle cx="7.5" cy="16.5" r="1.5"/><circle cx="16.5" cy="16.5" r="1.5"/>',
-  osteo: '<path d="M12 21s-8-5-8-11a4 4 0 018-2 4 4 0 018 2c0 6-8 11-8 11z"/>',
+  osteo: '<path d="M5 3v5a3 3 0 003 3 3 3 0 003-3V3"/><path d="M8 11v2a6 6 0 006 6 6 6 0 006-6v-2"/><circle cx="20" cy="7" r="2"/><circle cx="14" cy="21" r="2"/>',
 };
 
 function getTabsForRole() {
@@ -2477,7 +2490,7 @@ function getTabsForRole() {
   if (totalIfAllMain <= 6) {
     extraCandidates.forEach(e => tabs.push({ ...e, main: true }));
     if (hasCovoit) tabs.push({ id: "covoiturage", label: "Covoiturage", main: true });
-    if (hasOsteo) tabs.push({ id: "osteo", label: "RDV Ostéo", main: true });
+    if (hasOsteo) tabs.push({ id: "osteo", label: "Ostéo", main: true });
     tabs.push({ id: "profil", label: "Profil", main: true });
     return tabs;
   }
@@ -2489,7 +2502,7 @@ function getTabsForRole() {
 
   const extra = extraCandidates.slice();
   if (hasCovoit) extra.push({ id: "covoiturage", label: "Covoiturage", main: false });
-  if (hasOsteo) extra.push({ id: "osteo", label: "RDV Ostéo", main: false });
+  if (hasOsteo) extra.push({ id: "osteo", label: "Ostéo", main: false });
 
   // Un seul élément dans "Plus" -> inutile de le cacher derrière un clic, on l'affiche directement.
   if (extra.length === 1) {
