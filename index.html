@@ -337,6 +337,7 @@
   .osteo-mini-btn { display: block; width: 100%; text-align: center; background: var(--grad); color: #fff; font-weight: 800; font-size: 10px; text-transform: uppercase; border-radius: 8px; padding: 8px; }
   .osteo-mini-btn.cancel { background: rgba(255,107,107,0.15); color: #ff6b6b; }
   .osteo-card { background: #11141f; border: 1px solid rgba(47,107,255,0.28); border-radius: 14px; padding: 13px; margin-bottom: 10px; }
+  .osteo-carousel .osteo-card-wide { flex: 0 0 82%; margin-bottom: 0; }
   .osteo-manage-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #1a2030; font-size: 12px; }
   .osteo-manage-btn { display: block; width: 100%; text-align: center; padding: 9px; border-radius: 9px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.3px; background: #1a1f30; border: 1px solid #2a3350; color: #e4e8f2; }
   .osteo-manage-btn.priority { background: rgba(255,180,60,0.12); border-color: rgba(255,180,60,0.4); color: #ffb43c; }
@@ -866,28 +867,21 @@ function renderOsteoHomeCard() {
   const myTeams = myAllowedEquipes();
   const now = new Date();
   const reservedSlotIds = new Set(osteoReservations.map(r => r[0]));
-  const nextSlot = osteoSlots.filter(s => osteoSlotDate(s) >= now && !reservedSlotIds.has(s[0]) && (s[4] === "Toutes" || myTeams.includes(s[4])))
-    .sort((a, b) => osteoSlotDate(a) - osteoSlotDate(b))[0];
+  const available = osteoSlots.filter(s => osteoSlotDate(s) >= now && !reservedSlotIds.has(s[0]) && (s[4] === "Toutes" || myTeams.includes(s[4])))
+    .sort((a, b) => osteoSlotDate(a) - osteoSlotDate(b));
 
   let html = `<div class="card">
     <div class="section-h" style="margin-top:0;">🩺 Rendez-vous Ostéo</div>`;
 
-  if (nextSlot) {
-    const d = osteoSlotDate(nextSlot);
-    const dateLabel = d.toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short" });
-    html += `<div class="osteo-slot-card" style="width:100%; flex:none;">
-      <div class="osteo-tag">${escapeHtml(nextSlot[4])}</div>
-      <div class="osteo-slot-date2">${dateLabel}</div>
-      <div class="osteo-slot-meta2">${escapeHtml(nextSlot[2])}${nextSlot[3] ? "<br/>" + escapeHtml(nextSlot[3]) : ""}</div>
-      <div class="osteo-mini-btn" data-osteo-reserve-home="${escapeHtml(nextSlot[0])}">Réserver</div>
-    </div>`;
+  if (available.length > 0) {
+    html += `<div class="osteo-carousel">${available.map(s => renderOsteoSlotCard(s, "reserve")).join("")}</div>`;
   } else {
     html += `<div class="muted" style="margin-bottom:12px;">Aucun créneau disponible pour le moment.</div>`;
   }
 
   html += `<div style="display:flex; gap:8px; margin-top:10px;">
       <button class="btn" style="margin:0;" data-goto-osteo-tab="dispo">RDV Dispo</button>
-      <button class="btn secondary" style="margin:0;" data-goto-osteo-tab="mes">Mes RDV</button>
+      <button class="btn" style="margin:0;" data-goto-osteo-tab="mes">Mes RDV</button>
     </div>
   </div>`;
   return html;
@@ -1038,12 +1032,13 @@ function renderOsteoManagerView() {
   if (upcoming.length === 0) {
     html += `<div class="card"><div class="muted">Aucun créneau à venir.</div></div>`;
   } else {
+    html += `<div class="osteo-carousel">`;
     upcoming.forEach(s => {
       const [id, date, heure, lieu, equipe] = s;
       const resa = osteoReservations.find(r => r[0] === id);
       const d = osteoSlotDate(s);
       const dateLabel = d.toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short" });
-      html += `<div class="osteo-card">
+      html += `<div class="osteo-card osteo-card-wide">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
           <div><div style="font-size:13px; font-weight:800; color:#fff;">${dateLabel} · ${escapeHtml(heure)}</div><div class="muted" style="font-size:10px;">${escapeHtml(lieu)} · ${escapeHtml(equipe)}</div></div>
           <div class="osteo-tag ${resa ? 'taken' : ''}">${resa ? 'Pris' : 'Libre'}</div>
@@ -1055,6 +1050,7 @@ function renderOsteoManagerView() {
         <button type="button" class="osteo-manage-btn danger" style="margin-top:8px;" data-osteo-delete-slot="${escapeHtml(id)}">Supprimer ce créneau</button>
       </div>`;
     });
+    html += `</div>`;
   }
   return html;
 }
@@ -1453,7 +1449,7 @@ const LOGO_DATA_URI = "icon-512.png";
 const SESSION_KEY = "caisse-noire-session"; // {nom, role, code, equipe}
 const APP_VERSION_KEY = "caisse-noire-app-version";
 const LAST_USER_KEY = "lustuzone-last-user"; // simple mémorisation du dernier nom connecté sur cet appareil (pas le code)
-const APP_VERSION = "2026-07-08-26"; // À incrémenter à chaque mise à jour déployée
+const APP_VERSION = "2026-07-08-27"; // À incrémenter à chaque mise à jour déployée
 const SEASON_START = new Date(2026, 8, 1);  // 1er septembre 2026
 const SEASON_END = new Date(2027, 5, 30);   // 30 juin 2027
 
@@ -4248,7 +4244,13 @@ function attachEvents() {
   });
 
   document.querySelectorAll("[data-osteo-reserve]").forEach(el => {
-    el.onclick = () => { vibrate(); window.__osteoReserveSlotId = el.dataset.osteoReserve; render(); };
+    el.onclick = () => {
+      vibrate();
+      currentPage = "osteo";
+      window.__osteoTab = "dispo";
+      window.__osteoReserveSlotId = el.dataset.osteoReserve;
+      render();
+    };
   });
 
   document.querySelectorAll("[data-goto-osteo-tab]").forEach(el => {
@@ -4256,16 +4258,6 @@ function attachEvents() {
       vibrate();
       currentPage = "osteo";
       window.__osteoTab = el.dataset.gotoOsteoTab;
-      render();
-    };
-  });
-
-  document.querySelectorAll("[data-osteo-reserve-home]").forEach(el => {
-    el.onclick = () => {
-      vibrate();
-      currentPage = "osteo";
-      window.__osteoTab = "dispo";
-      window.__osteoReserveSlotId = el.dataset.osteoReserveHome;
       render();
     };
   });
