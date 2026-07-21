@@ -334,7 +334,7 @@
   .osteo-tag.done { background: rgba(154,166,196,0.15); color: #9aa6c4; }
   .osteo-slot-date2 { font-size: 12.5px; font-weight: 800; color: #fff; margin-bottom: 3px; }
   .osteo-slot-meta2 { font-size: 9.5px; color: #e4e8f2; font-weight: 700; margin-bottom: 8px; line-height: 1.4; }
-  .osteo-mini-btn { display: block; width: 100%; text-align: center; background: var(--grad); color: #fff; font-weight: 800; font-size: 10px; text-transform: uppercase; border-radius: 8px; padding: 8px; }
+  .osteo-mini-btn { display: block; width: 100%; text-align: center; background: var(--grad); color: #fff; font-weight: 800; font-size: 10px; text-transform: uppercase; border-radius: 8px; padding: 8px; cursor: pointer; }
   .osteo-mini-btn.cancel { background: rgba(255,107,107,0.15); color: #ff6b6b; }
   .osteo-card { background: #11141f; border: 1px solid rgba(47,107,255,0.28); border-radius: 14px; padding: 13px; margin-bottom: 10px; }
   .osteo-carousel .osteo-card-wide { flex: 0 0 82%; margin-bottom: 0; }
@@ -1039,12 +1039,16 @@ function renderOsteoManagerView() {
       const d = osteoSlotDate(s);
       const dateLabel = d.toLocaleDateString("fr-FR", { weekday: "short", day: "numeric", month: "short" });
       html += `<div class="osteo-card osteo-card-wide">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
-          <div><div style="font-size:13px; font-weight:800; color:#fff;">${dateLabel} · ${escapeHtml(heure)}</div><div class="muted" style="font-size:10px;">${escapeHtml(lieu)} · ${escapeHtml(equipe)}</div></div>
-          <div class="osteo-tag ${resa ? 'taken' : ''}">${resa ? 'Pris' : 'Libre'}</div>
+        <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+          <div>
+            <div class="osteo-tag ${resa ? "taken" : ""}">${escapeHtml(equipe)}</div>
+            <div class="osteo-slot-date2">${dateLabel}</div>
+            <div class="osteo-slot-meta2">${escapeHtml(heure)}${lieu ? "<br/>" + escapeHtml(lieu) : ""}</div>
+          </div>
+          <div class="osteo-tag ${resa ? 'taken' : ''}" style="margin-bottom:0;">${resa ? 'Pris' : 'Libre'}</div>
         </div>
         ${resa ? `
-          <div class="muted" style="font-size:11px; margin-bottom:8px;">Réservé par <span style="color:#fff; font-weight:700;">${escapeHtml(resa[1])}</span>${resa[2] ? " — Motif : " + escapeHtml(resa[2]) : ""}</div>
+          <div class="muted" style="font-size:11px; margin:6px 0 8px;">Réservé par <span style="color:#fff; font-weight:700;">${escapeHtml(resa[1])}</span>${resa[2] ? " — Motif : " + escapeHtml(resa[2]) : ""}</div>
           ${window.__osteoReassignId === id ? renderOsteoReassignForm(id) : `<button type="button" class="osteo-manage-btn priority" data-osteo-reassign="${escapeHtml(id)}">Réassigner en priorité</button>`}
         ` : ""}
         <button type="button" class="osteo-manage-btn danger" style="margin-top:8px;" data-osteo-delete-slot="${escapeHtml(id)}">Supprimer ce créneau</button>
@@ -1449,7 +1453,7 @@ const LOGO_DATA_URI = "icon-512.png";
 const SESSION_KEY = "caisse-noire-session"; // {nom, role, code, equipe}
 const APP_VERSION_KEY = "caisse-noire-app-version";
 const LAST_USER_KEY = "lustuzone-last-user"; // simple mémorisation du dernier nom connecté sur cet appareil (pas le code)
-const APP_VERSION = "2026-07-08-28"; // À incrémenter à chaque mise à jour déployée
+const APP_VERSION = "2026-07-08-29"; // À incrémenter à chaque mise à jour déployée
 const SEASON_START = new Date(2026, 8, 1);  // 1er septembre 2026
 const SEASON_END = new Date(2027, 5, 30);   // 30 juin 2027
 
@@ -3827,14 +3831,16 @@ function renderActualitesPage() {
       const [id, titre, scope, texte, auteur, date] = a;
       const canDelete = canManageAny || (hasRole("Coach") && equipesForRole("Coach").includes(scope));
       const dateLabel = date ? String(date).slice(0, 10).split("-").reverse().join("/") : "";
-      html += `<div class="news-card">
+      const isOsteoActu = String(titre || "").indexOf("Nouveau(x) créneau(x) RDV Ostéo") === 0;
+      html += `<div class="news-card" style="${isOsteoActu ? "border-left:3px solid var(--gold);" : ""}">
         <div class="row-flex" style="align-items:flex-start; justify-content:space-between;">
-          <span class="badge">${scope === "Générale" ? "Générale" : scope}</span>
+          <span class="badge" style="${isOsteoActu ? "background:rgba(224,166,57,0.15); color:var(--gold); border-color:rgba(224,166,57,0.35);" : ""}">${isOsteoActu ? "🩺 " : ""}${scope === "Générale" ? "Générale" : scope}</span>
           ${canDelete ? iconBtn(ICON_CROSS, "ev-del", `data-delete-actualite="${id}" style="flex-shrink:0;"`) : ""}
         </div>
         <div class="news-title">${escapeHtml(titre)}</div>
         <div class="news-body">${escapeHtml(texte)}</div>
         <div class="ev-meta" style="margin-top:8px;">Par ${escapeHtml(auteur || "?")} ${dateLabel ? "· " + dateLabel : ""}</div>
+        ${isOsteoActu ? `<button class="btn" style="margin-top:10px;" data-goto-osteo-tab="dispo">Voir les créneaux</button>` : ""}
       </div>`;
     });
   }
