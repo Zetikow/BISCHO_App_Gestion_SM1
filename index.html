@@ -337,7 +337,7 @@
   .osteo-mini-btn { display: block; width: 100%; text-align: center; background: var(--grad); color: #fff; font-weight: 800; font-size: 10px; text-transform: uppercase; border-radius: 8px; padding: 8px; cursor: pointer; }
   .osteo-mini-btn.cancel { background: rgba(255,107,107,0.15); color: #ff6b6b; }
   .osteo-card { background: #11141f; border: 1px solid rgba(47,107,255,0.28); border-radius: 14px; padding: 13px; margin-bottom: 10px; }
-  .osteo-carousel .osteo-card-wide { flex: 0 0 82%; margin-bottom: 0; }
+  .osteo-carousel .osteo-card-wide { flex: 0 0 240px; margin-bottom: 0; }
   .osteo-manage-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #1a2030; font-size: 12px; }
   .osteo-manage-btn { display: block; width: 100%; text-align: center; padding: 9px; border-radius: 9px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.3px; background: #1a1f30; border: 1px solid #2a3350; color: #e4e8f2; }
   .osteo-manage-btn.priority { background: rgba(255,180,60,0.12); border-color: rgba(255,180,60,0.4); color: #ffb43c; }
@@ -888,7 +888,7 @@ function renderOsteoHomeCard() {
 }
 
 function renderOsteoPage() {
-  const isManager = hasRole("Ostéo") || hasRole("Admin");
+  const isManager = hasRole("Ostéo");
   const tab = (window.__osteoTab === "mes") ? "mes" : "dispo";
 
   let html = `<div class="page-title">RDV Ostéo</div><div class="page-sub">Avec Eve, ostéopathe du club.</div>`;
@@ -1065,6 +1065,8 @@ function renderOsteoReassignForm(slotId) {
     <select id="osteo-reassign-select">
       ${allPlayers.map(p => `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join("")}
     </select>
+    <label class="field-label">Message (envoyé par mail à la personne)</label>
+    <textarea id="osteo-reassign-message" rows="3" placeholder="Ex: J'ai besoin de te voir en priorité avant le match, merci de venir à ce créneau."></textarea>
     <button class="btn" style="margin-top:6px;" data-osteo-reassign-confirm="${escapeHtml(slotId)}">Confirmer la réassignation</button>
   </div>`;
 }
@@ -1284,11 +1286,11 @@ async function addOsteoSlotApi(payload) {
   } catch (err) { isOnline = false; render(); }
 }
 
-async function reassignOsteoSlotApi(slotId, newNom) {
+async function reassignOsteoSlotApi(slotId, newNom, message) {
   window.__osteoReassignId = null;
   render();
   try {
-    const params = new URLSearchParams({ action: "reassignOsteoSlotPriority", slotId, newNom, authNom: session.nom, authCode: session.code });
+    const params = new URLSearchParams({ action: "reassignOsteoSlotPriority", slotId, newNom, message, authNom: session.nom, authCode: session.code });
     await fetch(`${GOOGLE_SCRIPT_URL}?${params.toString()}`);
     await fetchAll();
   } catch (err) { isOnline = false; render(); }
@@ -1453,7 +1455,7 @@ const LOGO_DATA_URI = "icon-512.png";
 const SESSION_KEY = "caisse-noire-session"; // {nom, role, code, equipe}
 const APP_VERSION_KEY = "caisse-noire-app-version";
 const LAST_USER_KEY = "lustuzone-last-user"; // simple mémorisation du dernier nom connecté sur cet appareil (pas le code)
-const APP_VERSION = "2026-07-08-29"; // À incrémenter à chaque mise à jour déployée
+const APP_VERSION = "2026-07-08-33"; // À incrémenter à chaque mise à jour déployée
 const SEASON_START = new Date(2026, 8, 1);  // 1er septembre 2026
 const SEASON_END = new Date(2027, 5, 30);   // 30 juin 2027
 
@@ -2351,6 +2353,7 @@ function render() {
         <div class="avatar-menu-item" id="menu-profil">Mon profil</div>
         <div class="avatar-menu-item" id="menu-guide">📖 Consignes d'utilisation</div>
         <div class="avatar-menu-item" id="menu-support">💬 Support / une question ?</div>
+        <a class="avatar-menu-item" href="https://handballbischoffsheim.fr/" target="_blank" rel="noopener" style="display:block; text-decoration:none; box-sizing:border-box;">🌐 Site du club</a>
         <div class="avatar-menu-item" id="menu-changecode">Changer le code</div>
         <div class="avatar-menu-item danger" id="menu-logout">Se déconnecter</div>
       </div>` : ""}
@@ -4318,9 +4321,11 @@ function attachEvents() {
       const slotId = el.dataset.osteoReassignConfirm;
       const select = document.getElementById("osteo-reassign-select");
       const newNom = select ? select.value : "";
+      const messageEl = document.getElementById("osteo-reassign-message");
+      const message = messageEl ? messageEl.value.trim() : "";
       if (!newNom) return;
       vibrate();
-      reassignOsteoSlotApi(slotId, newNom);
+      reassignOsteoSlotApi(slotId, newNom, message);
     };
   });
 
