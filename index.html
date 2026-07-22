@@ -1083,7 +1083,8 @@ function guideSections() {
     ]},
     { title: "Accueil", items: [
       "Le prochain événement est mis en avant, avec un bouton Présent/Absent en un tap.",
-      "Les résultats des 2 derniers matchs et les 2 prochains de ton équipe s'affichent automatiquement, avec un halo vert en cas de victoire.",
+      "Les résultats et prochains matchs de ton équipe défilent en carrousel (glisse ou utilise les flèches) — vert pour une victoire.",
+      "Un encart \"Rendez-vous Ostéo\" affiche les créneaux disponibles, réservables directement depuis l'Accueil.",
       isSM1 ? "Un encart Caisse noire et Présence apparaît si ton rôle y donne accès." : "Un encart Présence apparaît si ton rôle y donne accès.",
     ]},
     { title: "Agenda", items: [
@@ -1096,8 +1097,9 @@ function guideSections() {
       "Coach, Admin et Salarié peuvent publier une actualité.",
     ]},
     ...(isSM1 ? [{ title: "Caisse noire (SM1)", items: [
-      "Chaque joueur SM1 voit sa carte avec le détail des actions et le total dû.",
-      "Seul l'Admin peut modifier un compteur en cas d'erreur.",
+      "Chaque joueur SM1 voit sa carte avec le détail des actions et le total dû, ainsi que le montant déjà payé.",
+      "Pour un retard (entraînement ou match), indique juste le nombre de minutes — le montant se calcule automatiquement selon le barème.",
+      "Seul l'Admin peut modifier un compteur en cas d'erreur, ou consulter le tableau détaillé complet.",
     ]}] : []),
     { title: "Présence", items: [
       "Réservé au Coach et à l'Admin : historique complet et moyennes de présence par joueur.",
@@ -1123,6 +1125,12 @@ function guideSections() {
       "Visible pour les matchs à l'extérieur uniquement.",
       "Indique si tu conduis (avec le nombre de places) ou si tu cherches une place.",
       "Pour les équipes de mineurs, le joueur ET son parent peuvent tous les deux le renseigner.",
+    ]},
+    { title: "RDV Ostéo", items: [
+      "Onglet \"Disponibles\" : réserve un créneau libre pour ton équipe (ou ouvert à tous), avec un motif optionnel visible seulement par toi et Eve.",
+      "Onglet \"Mes RDV\" : tes rendez-vous à venir (annulables, ce qui libère automatiquement le créneau) et ton historique.",
+      "Un mail de rappel est envoyé automatiquement la veille de chaque rendez-vous.",
+      "Eve (et l'Admin, sous l'onglet Disponibles) peuvent créer des créneaux — y compris récurrents sur plusieurs semaines — et gérer les réservations.",
     ]},
     { title: "Une question qui n'est pas ici ?", items: [
     "Utilise \"Support / une question ?\" dans le menu (en cliquant sur tes initiales) — ton message part directement à l'équipe de gestion du club.",
@@ -1455,7 +1463,7 @@ const LOGO_DATA_URI = "icon-512.png";
 const SESSION_KEY = "caisse-noire-session"; // {nom, role, code, equipe}
 const APP_VERSION_KEY = "caisse-noire-app-version";
 const LAST_USER_KEY = "lustuzone-last-user"; // simple mémorisation du dernier nom connecté sur cet appareil (pas le code)
-const APP_VERSION = "2026-07-08-34"; // À incrémenter à chaque mise à jour déployée
+const APP_VERSION = "2026-07-08-35"; // À incrémenter à chaque mise à jour déployée
 const SEASON_START = new Date(2026, 8, 1);  // 1er septembre 2026
 const SEASON_END = new Date(2027, 5, 30);   // 30 juin 2027
 
