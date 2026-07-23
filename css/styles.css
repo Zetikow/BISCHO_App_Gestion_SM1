@@ -18,7 +18,7 @@ body {
 #app {
   max-width: 100%;
   padding: 12px;
-  background-image: linear-gradient(180deg, rgba(7,8,13,0.28), rgba(7,8,13,0.42)), url('../bg-app.jpg');
+  background-image: linear-gradient(180deg, rgba(7,8,13,0.28), rgba(7,8,13,0.42)), url('../images/bg-app.jpg');
   background-size: 100% auto;
   background-position: top center;
   background-repeat: repeat-y;
@@ -136,7 +136,7 @@ tr.total-row td { font-weight: 800; background: #1a1710; color: #ffd23f; }
   justify-content: center;
   min-height: 85vh;
   padding: 16px;
-  background-image: linear-gradient(180deg, rgba(7,8,13,0.28), rgba(7,8,13,0.42)), url('../bg-app.jpg');
+  background-image: linear-gradient(180deg, rgba(7,8,13,0.28), rgba(7,8,13,0.42)), url('../images/bg-app.jpg');
   background-size: cover;
   background-position: center top;
   background-repeat: no-repeat;
