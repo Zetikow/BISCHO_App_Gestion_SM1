@@ -80,8 +80,7 @@ function computePresenceDetail(p, equipe, monthOnly) {
     else if (v === "Non") absences.push(ev);
   });
   const byDateAsc = (a, b) => eventDateObj(a) - eventDateObj(b);
-  const byDateDesc = (a, b) => eventDateObj(b) - eventDateObj(a);
-  return { absences: absences.sort(byDateAsc), presences: presences.sort(byDateDesc) };
+  return { absences: absences.sort(byDateAsc), presences: presences.sort(byDateAsc) };
 }
 
 function renderPresenceDetailEvRow(ev) {
