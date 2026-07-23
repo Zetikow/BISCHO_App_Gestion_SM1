@@ -277,18 +277,24 @@ body.login-mode .login-wrap { flex: 1; min-height: 0; }
 .composition-card-btn.view { background: rgba(47,107,255,0.12); border-color: rgba(47,107,255,0.4); color: #5a8fe8; }
 .composition-not-selected-badge { display: inline-flex; align-items: center; gap: 5px; margin-top: 8px; padding: 6px 11px; border-radius: 20px; background: #1a1f30; border: 1px solid #2a3350; color: #8a8f9e; font-size: 11px; font-weight: 700; }
 
+.composition-overlay { z-index: 96; }
+@media (min-width: 700px) {
+  .composition-overlay { left: 50%; right: auto; width: 820px; max-width: calc(100vw - 32px); transform: translateX(-50%); border-radius: 20px; }
+}
 .composition-overlay .modal-header { flex-wrap: wrap; row-gap: 6px; }
 .composition-cap { font-size: 10.5px; color: #8a8f9e; font-weight: 700; flex-shrink: 0; }
-.composition-body { flex: 1; display: flex; gap: 8px; overflow: hidden; min-height: 0; }
+.composition-body { flex: 1; display: flex; gap: 10px; overflow: hidden; min-height: 0; }
 .composition-col-label { font-size: 9px; color: #8a8f9e; text-transform: uppercase; font-weight: 800; letter-spacing: 0.3px; margin-bottom: 6px; }
 .composition-col-label.muted-label { margin-top: 10px; color: #5f6473; }
 
-.composition-bench-col { flex: 0 0 54px; display: flex; flex-direction: column; align-items: center; overflow-y: auto; }
-.composition-bench-slot { width: 34px; height: 34px; border-radius: 50%; margin-bottom: 8px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; touch-action: none; }
+.composition-court-col { flex: 1.4; display: flex; flex-direction: column; overflow-y: auto; min-width: 0; }
+.composition-bench-row { margin-top: 10px; flex-shrink: 0; }
+.composition-bench-row-slots { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+.composition-bench-slot { width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; touch-action: none; }
 .composition-bench-slot.empty { border: 2px dashed #2a3350; }
 .composition-bench-slot.filled { background: #181d2e; cursor: grab; }
 
-.composition-court-wrap { flex: 1.5; position: relative; aspect-ratio: 2 / 3; background: #fff; border-radius: 10px; overflow: hidden; align-self: flex-start; }
+.composition-court-wrap { width: 100%; position: relative; aspect-ratio: 2 / 3; background: #fff; border-radius: 10px; overflow: hidden; flex-shrink: 0; }
 .composition-court-svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 .composition-slot { position: absolute; transform: translate(-50%, -50%); width: 15%; aspect-ratio: 1 / 1; border-radius: 50%; display: flex; align-items: center; justify-content: center; touch-action: none; }
 .composition-slot.empty { border: 2px dashed #b4b2a9; background: rgba(12,14,22,0.03); }

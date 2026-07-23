@@ -14,6 +14,10 @@
 // pendant le geste, voir isFormOpen() dans state.js.
 // ===================================================================
 
+// Zone libre (placement défensif) mise de côté pour l'instant, le temps de valider les postes
+// fixes du terrain — le backend (Compositions.gs) reste inchangé, seul l'affichage est masqué.
+const COMPOSITION_FREE_ZONE_ENABLED = false;
+
 const COMPOSITION_FIELD_SLOTS = ["GB", "AiG", "AiD", "PV", "ArG", "ArD", "DC"];
 const COMPOSITION_BENCH_SLOTS = ["Banc1", "Banc2", "Banc3", "Banc4", "Banc5"];
 const COMPOSITION_ALL_SLOTS = [...COMPOSITION_FIELD_SLOTS, ...COMPOSITION_BENCH_SLOTS];
@@ -104,13 +108,15 @@ function renderCompositionSlotEl(matchId, code, nom, isBench) {
 
 function renderCompositionCourt(matchId, readonly) {
   const slots = compositionSlotsFor(matchId);
-  const freePositions = compositionFreePosFor(matchId);
-
   const fieldHtml = COMPOSITION_FIELD_SLOTS.map(code => renderCompositionSlotEl(matchId, code, slots[code], false)).join("");
 
-  const freeTokens = freePositions.map(f => `<div class="composition-free-token" style="left:${f.x}%; top:${f.y}%;" ${readonly ? "" : `data-comp-drag-nom="${escapeHtml(f.nom)}" data-comp-drag-from="Libre"`}>
-    ${compositionPlayerAvatar(f.nom, "composition-avatar-sm")}
-  </div>`).join("");
+  let freeZoneHtml = "";
+  if (COMPOSITION_FREE_ZONE_ENABLED) {
+    const freeTokens = compositionFreePosFor(matchId).map(f => `<div class="composition-free-token" style="left:${f.x}%; top:${f.y}%;" ${readonly ? "" : `data-comp-drag-nom="${escapeHtml(f.nom)}" data-comp-drag-from="Libre"`}>
+      ${compositionPlayerAvatar(f.nom, "composition-avatar-sm")}
+    </div>`).join("");
+    freeZoneHtml = `<div class="composition-free-zone" ${readonly ? "" : 'data-comp-free-zone="1"'}>${freeTokens}</div>`;
+  }
 
   return `<div class="composition-court-wrap">
     <svg viewBox="0 0 400 600" class="composition-court-svg">
@@ -121,7 +127,7 @@ function renderCompositionCourt(matchId, readonly) {
       <path d="M 20 70 A 190 190 0 0 0 380 70" fill="none" stroke="#0c0e16" stroke-width="2.5" stroke-dasharray="9 7"/>
     </svg>
     ${fieldHtml}
-    <div class="composition-free-zone" ${readonly ? "" : 'data-comp-free-zone="1"'}>${freeTokens}</div>
+    ${freeZoneHtml}
   </div>`;
 }
 
@@ -151,12 +157,14 @@ function renderCompositionEditor(matchId) {
       <div class="composition-cap">${occupiedCount} / 12 places</div>
     </div>
     <div class="composition-body">
-      <div class="composition-bench-col" data-comp-roster-drop="1">
-        <div class="composition-col-label">Banc (5)</div>
-        ${benchHtml}
+      <div class="composition-court-col">
+        ${renderCompositionCourt(matchId, false)}
+        <div class="composition-bench-row">
+          <div class="composition-col-label">Banc (5)</div>
+          <div class="composition-bench-row-slots">${benchHtml}</div>
+        </div>
       </div>
-      ${renderCompositionCourt(matchId, false)}
-      <div class="composition-roster-col">
+      <div class="composition-roster-col" data-comp-roster-drop="1">
         <div class="composition-col-label">Présents</div>
         ${present.length === 0 ? `<div class="muted composition-empty-note">Aucun joueur disponible.</div>` : present.map(p => rosterRow(p, false)).join("")}
         <div class="composition-col-label muted-label">Absents / pas répondu</div>
@@ -186,36 +194,51 @@ function renderCompositionPlayerView(matchId) {
       <div class="modal-title">Composition ${escapeHtml(ev[4] || "U17")}</div>
     </div>
     <div class="composition-body">
-      <div class="composition-bench-col">
-        <div class="composition-col-label">Banc</div>
-        ${benchNoms.length === 0 ? "" : benchNoms.map(nom => `<div class="composition-bench-slot filled readonly">${compositionPlayerAvatar(nom, "composition-avatar-sm")}</div>`).join("")}
+      <div class="composition-court-col">
+        ${renderCompositionCourt(matchId, true)}
+        ${benchNoms.length === 0 ? "" : `<div class="composition-bench-row">
+          <div class="composition-col-label">Banc</div>
+          <div class="composition-bench-row-slots">${benchNoms.map(nom => `<div class="composition-bench-slot filled readonly">${compositionPlayerAvatar(nom, "composition-avatar-sm")}</div>`).join("")}</div>
+        </div>`}
       </div>
-      ${renderCompositionCourt(matchId, true)}
-      <div class="composition-roster-col"></div>
     </div>
   </div>`;
 }
 
 // ===================== ACTIONS API =====================
 
+// Optimiste : applique tout de suite en local (l'avatar apparaît sans attendre le
+// aller-retour réseau, souvent 2-6s sur Apps Script) — resynchronise via fetchAll()
+// seulement si le serveur refuse, pour annuler proprement l'optimisme.
 async function compositionSetSlotApi(matchId, nom, zone) {
+  for (let i = compositions.length - 1; i >= 0; i--) {
+    const r = compositions[i];
+    if (r[0] !== matchId || !COMPOSITION_ALL_SLOTS.includes(r[2])) continue;
+    if (r[1] === nom || (zone && r[2] === zone)) compositions.splice(i, 1);
+  }
+  if (zone) compositions.push([matchId, nom, zone, "", ""]);
+  render();
   try {
     const params = new URLSearchParams({ action: "setCompositionSlot", matchId, nom, zone, authNom: session.nom, authCode: session.code });
     const res = await fetch(`${GOOGLE_SCRIPT_URL}?${params.toString()}`);
     const data = await res.json();
-    if (!data.ok) showToast(data.error === "team_full" ? "Équipe complète" : "Échec de l'action", "error");
-    await fetchAll();
-  } catch (err) { isOnline = false; showToast("Échec de l'action", "error"); render(); }
+    if (!data.ok) { showToast(data.error === "team_full" ? "Équipe complète" : "Échec de l'action", "error"); await fetchAll(); }
+  } catch (err) { isOnline = false; showToast("Échec de l'action", "error"); await fetchAll(); }
 }
 
 async function compositionSetFreePosApi(matchId, nom, x, y) {
+  for (let i = compositions.length - 1; i >= 0; i--) {
+    const r = compositions[i];
+    if (r[0] === matchId && r[1] === nom && r[2] === "Libre") compositions.splice(i, 1);
+  }
+  if (x !== "") compositions.push([matchId, nom, "Libre", String(x), String(y)]);
+  render();
   try {
     const params = new URLSearchParams({ action: "setCompositionFreePos", matchId, nom, x: String(x), y: String(y), authNom: session.nom, authCode: session.code });
     const res = await fetch(`${GOOGLE_SCRIPT_URL}?${params.toString()}`);
     const data = await res.json();
-    if (!data.ok) showToast("Échec de l'action", "error");
-    await fetchAll();
-  } catch (err) { isOnline = false; showToast("Échec de l'action", "error"); render(); }
+    if (!data.ok) { showToast("Échec de l'action", "error"); await fetchAll(); }
+  } catch (err) { isOnline = false; showToast("Échec de l'action", "error"); await fetchAll(); }
 }
 
 async function compositionPublishApi(matchId, publie) {
