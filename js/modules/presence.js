@@ -79,8 +79,9 @@ function computePresenceDetail(p, equipe, monthOnly) {
     if (v === "Oui") presences.push(ev);
     else if (v === "Non") absences.push(ev);
   });
+  const byDateAsc = (a, b) => eventDateObj(a) - eventDateObj(b);
   const byDateDesc = (a, b) => eventDateObj(b) - eventDateObj(a);
-  return { absences: absences.sort(byDateDesc), presences: presences.sort(byDateDesc) };
+  return { absences: absences.sort(byDateAsc), presences: presences.sort(byDateDesc) };
 }
 
 function renderPresenceDetailEvRow(ev) {
