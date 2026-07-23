@@ -122,9 +122,11 @@ function renderPaiementsPage() {
 
 async function addPaiement(joueur, montant, commentaire) {
   try {
-    await fetch(`${GOOGLE_SCRIPT_URL}?action=addPaiement&joueur=${encodeURIComponent(joueur)}&montant=${montant}&commentaire=${encodeURIComponent(commentaire || "")}&authNom=${encodeURIComponent(session.nom)}&authCode=${encodeURIComponent(session.code)}`);
+    const res = await fetch(`${GOOGLE_SCRIPT_URL}?action=addPaiement&joueur=${encodeURIComponent(joueur)}&montant=${montant}&commentaire=${encodeURIComponent(commentaire || "")}&authNom=${encodeURIComponent(session.nom)}&authCode=${encodeURIComponent(session.code)}`);
+    const data = await res.json();
+    showToast(data.ok ? "Ajout réussi" : "Échec de l'ajout", data.ok ? "success" : "error");
     await fetchAll();
-  } catch (err) { isOnline = false; render(); }
+  } catch (err) { isOnline = false; showToast("Échec de l'ajout", "error"); render(); }
 }
 
 async function updatePaiementApi(id, joueur, montant, commentaire) {

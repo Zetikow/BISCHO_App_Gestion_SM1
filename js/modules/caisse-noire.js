@@ -61,9 +61,11 @@ async function writeCell(player, actionIndex, value) {
   const row = parseInt(actionIndex, 10) + 2;
   const col = playerIndex + 3;
   try {
-    await fetch(`${GOOGLE_SCRIPT_URL}?action=set&row=${row}&col=${col}&value=${value}&authNom=${encodeURIComponent(session.nom)}&authCode=${encodeURIComponent(session.code)}`);
-    isOnline = true;
-  } catch (err) { isOnline = false; }
+    const res = await fetch(`${GOOGLE_SCRIPT_URL}?action=set&row=${row}&col=${col}&value=${value}&authNom=${encodeURIComponent(session.nom)}&authCode=${encodeURIComponent(session.code)}`);
+    const data = await res.json();
+    showToast(data.ok ? "Ajout réussi" : "Échec de l'ajout", data.ok ? "success" : "error");
+    isOnline = true; // la requête a bien atteint le serveur, qu'elle ait réussi ou non côté métier
+  } catch (err) { isOnline = false; showToast("Échec de l'ajout", "error"); }
   render();
 }
 

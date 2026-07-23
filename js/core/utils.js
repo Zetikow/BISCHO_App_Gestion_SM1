@@ -1,7 +1,8 @@
 // ===================================================================
 // UTILITAIRES GÉNÉRIQUES — formatage, échappement HTML, sélecteurs
-// date/heure maison, retour tactile, compression d'image, tirer-pour-
-// rafraîchir. Rien ici ne dépend d'un module métier en particulier.
+// date/heure maison, retour tactile, notification toast succès/échec,
+// compression d'image, tirer-pour-rafraîchir. Rien ici ne dépend d'un
+// module métier en particulier.
 // ===================================================================
 
 function escapeHtml(str) {
@@ -109,6 +110,25 @@ function iconBtn(pathHtml, cls, attrsHtml) {
 
 function vibrate() {
   if (navigator.vibrate) { try { navigator.vibrate(12); } catch (e) {} }
+}
+
+// ---------- Notification (toast) succès/échec ----------
+// Retour visuel de 3s après une action de création (créneau ostéo, événement, actualité,
+// paiement, action caisse noire...) — vert "Ajout réussi" / rouge "Échec de l'ajout". Posé
+// directement sur document.body (comme #ptr-indicator plus haut) pour survivre à la
+// reconstruction complète de #app par render().
+let toastHideTimeoutId = null;
+function showToast(message, type) {
+  let el = document.getElementById("app-toast");
+  if (!el) {
+    el = document.createElement("div");
+    el.id = "app-toast";
+    document.body.appendChild(el);
+  }
+  el.textContent = message;
+  el.className = `app-toast ${type === "error" ? "error" : "success"} visible`;
+  clearTimeout(toastHideTimeoutId);
+  toastHideTimeoutId = setTimeout(() => { el.classList.remove("visible"); }, 3000);
 }
 
 // Retour visuel immédiat au toucher, indépendant du rafraîchissement de la page

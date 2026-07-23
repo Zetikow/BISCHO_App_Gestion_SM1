@@ -244,9 +244,11 @@ async function addOsteoSlotApi(payload) {
   render();
   try {
     const params = new URLSearchParams({ action: "addOsteoSlot", authNom: session.nom, authCode: session.code, ...payload });
-    await fetch(`${GOOGLE_SCRIPT_URL}?${params.toString()}`);
+    const res = await fetch(`${GOOGLE_SCRIPT_URL}?${params.toString()}`);
+    const data = await res.json();
+    showToast(data.ok ? "Ajout réussi" : "Échec de l'ajout", data.ok ? "success" : "error");
     await fetchAll();
-  } catch (err) { isOnline = false; render(); }
+  } catch (err) { isOnline = false; showToast("Échec de l'ajout", "error"); render(); }
 }
 
 async function reassignOsteoSlotApi(slotId, newNom, message) {

@@ -83,10 +83,11 @@ function renderActualitesPage() {
 
 async function addActualiteApi(titre, scope, texte) {
   try {
-    await fetch(`${GOOGLE_SCRIPT_URL}?action=addActualite&titre=${encodeURIComponent(titre)}&scope=${encodeURIComponent(scope)}&texte=${encodeURIComponent(texte)}&authNom=${encodeURIComponent(session.nom)}&authCode=${encodeURIComponent(session.code)}`);
-    window.__showAddActualite = false;
-    await fetchAll();
-  } catch (err) { isOnline = false; render(); }
+    const res = await fetch(`${GOOGLE_SCRIPT_URL}?action=addActualite&titre=${encodeURIComponent(titre)}&scope=${encodeURIComponent(scope)}&texte=${encodeURIComponent(texte)}&authNom=${encodeURIComponent(session.nom)}&authCode=${encodeURIComponent(session.code)}`);
+    const data = await res.json();
+    showToast(data.ok ? "Ajout réussi" : "Échec de l'ajout", data.ok ? "success" : "error");
+    if (data.ok) { window.__showAddActualite = false; await fetchAll(); } else { render(); }
+  } catch (err) { isOnline = false; showToast("Échec de l'ajout", "error"); render(); }
 }
 
 async function deleteActualiteApi(id) {
