@@ -270,6 +270,48 @@ body.login-mode .login-wrap { flex: 1; min-height: 0; }
 .presence-detail-ev:last-child { border-bottom: none; }
 .presence-detail-ev-date { color: var(--accent); font-weight: 800; text-transform: capitalize; flex-shrink: 0; width: 70px; }
 .presence-detail-ev-title { color: #e4e8f2; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.btn.danger { background: rgba(255,107,107,0.12); color: #ff6b6b; border-color: rgba(255,107,107,0.4); }
+
+.composition-card-btn { display: inline-flex; align-items: center; gap: 5px; margin-top: 8px; padding: 7px 12px; border-radius: 9px; background: #1a1f30; border: 1px solid #2a3350; color: #e4e8f2; font-size: 10.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.3px; cursor: pointer; }
+.composition-card-btn.view { background: rgba(47,107,255,0.12); border-color: rgba(47,107,255,0.4); color: #5a8fe8; }
+.composition-not-selected-badge { display: inline-flex; align-items: center; gap: 5px; margin-top: 8px; padding: 6px 11px; border-radius: 20px; background: #1a1f30; border: 1px solid #2a3350; color: #8a8f9e; font-size: 11px; font-weight: 700; }
+
+.composition-overlay .modal-header { flex-wrap: wrap; row-gap: 6px; }
+.composition-cap { font-size: 10.5px; color: #8a8f9e; font-weight: 700; flex-shrink: 0; }
+.composition-body { flex: 1; display: flex; gap: 8px; overflow: hidden; min-height: 0; }
+.composition-col-label { font-size: 9px; color: #8a8f9e; text-transform: uppercase; font-weight: 800; letter-spacing: 0.3px; margin-bottom: 6px; }
+.composition-col-label.muted-label { margin-top: 10px; color: #5f6473; }
+
+.composition-bench-col { flex: 0 0 54px; display: flex; flex-direction: column; align-items: center; overflow-y: auto; }
+.composition-bench-slot { width: 34px; height: 34px; border-radius: 50%; margin-bottom: 8px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; touch-action: none; }
+.composition-bench-slot.empty { border: 2px dashed #2a3350; }
+.composition-bench-slot.filled { background: #181d2e; cursor: grab; }
+
+.composition-court-wrap { flex: 1.5; position: relative; aspect-ratio: 2 / 3; background: #fff; border-radius: 10px; overflow: hidden; align-self: flex-start; }
+.composition-court-svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.composition-slot { position: absolute; transform: translate(-50%, -50%); width: 15%; aspect-ratio: 1 / 1; border-radius: 50%; display: flex; align-items: center; justify-content: center; touch-action: none; }
+.composition-slot.empty { border: 2px dashed #b4b2a9; background: rgba(12,14,22,0.03); }
+.composition-slot.filled { background: #fff; box-shadow: 0 0 0 2px var(--accent); cursor: grab; }
+.composition-slot-label { font-size: 9px; font-weight: 800; color: #888780; }
+.composition-free-zone { position: absolute; left: 8.75%; top: 55%; width: 82.5%; height: 40.8%; border: 2px dashed var(--accent2); border-radius: 8px; touch-action: none; }
+.composition-free-token { position: absolute; transform: translate(-50%, -50%); touch-action: none; cursor: grab; }
+
+.composition-roster-col { flex: 1; display: flex; flex-direction: column; overflow-y: auto; gap: 5px; min-width: 0; }
+.composition-roster-item { display: flex; align-items: center; gap: 7px; background: #181d2e; border-radius: 9px; padding: 6px 8px; cursor: grab; touch-action: none; flex-shrink: 0; }
+.composition-roster-item.greyed { opacity: 0.4; }
+.composition-roster-name { font-size: 11px; font-weight: 700; color: #e4e8f2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.composition-empty-note { font-size: 10.5px; }
+
+.composition-avatar-sm { width: 26px; height: 26px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
+.composition-avatar-md { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
+.composition-initials { display: flex; align-items: center; justify-content: center; background: var(--grad); color: #fff; font-weight: 800; font-size: 10px; }
+
+.composition-footer { display: flex; gap: 8px; margin-top: 10px; flex-shrink: 0; }
+.composition-footer .btn { margin: 0; flex: 1; }
+
+.composition-ghost { position: fixed; top: 0; left: 0; transform: translate(-50%, -50%) scale(1.1); z-index: 999; pointer-events: none; opacity: 0.92; }
+.composition-drop-hover { box-shadow: 0 0 0 3px #33d17a !important; }
 .ev-date { text-align: center; flex-shrink: 0; width: 46px; }
 .ev-day { font-size: 22px; font-weight: 900; color: #fff; line-height: 1; }
 .ev-month { font-size: 10px; color: var(--accent); text-transform: uppercase; font-weight: 700; margin-top: 3px; }

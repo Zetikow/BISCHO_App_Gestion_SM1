@@ -16,6 +16,7 @@ function attachEvents() {
 
   attachCaisseNoireEvents();
   attachAgendaEvents();
+  attachCompositionEvents();
   attachPresenceEvents();
   attachCovoiturageEvents();
   attachOsteoEvents();

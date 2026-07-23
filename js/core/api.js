@@ -21,6 +21,8 @@ async function fetchAll() {
     covoiturage = (data.covoiturage || []).slice(1).filter(r => r[0]);
     osteoSlots = (data.osteoSlots || []).slice(1).filter(r => r[0]);
     osteoReservations = (data.osteoReservations || []).slice(1).filter(r => r[0]);
+    compositions = (data.compositions || []).slice(1).filter(r => r[0]);
+    compositionsMeta = (data.compositionsMeta || []).slice(1).filter(r => r[0]);
     const parsedPE = parsePresenceEvenements(data.presenceEvenements || []);
     presenceEvenements = parsedPE.p;
     presenceJustifications = parsedPE.j;

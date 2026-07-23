@@ -2,6 +2,11 @@
 // AGENDA — matchs, entraînements et autres événements (feuille
 // "Evenements") : widget Score'n'co, cartes de résultats/prochains
 // matchs, export calendrier (.ics), formulaire de création/édition.
+//
+// Un match U17 affiche en plus le bouton Composition (voir composition.js
+// / renderCompositionCardButtons, appelé depuis renderEventCard) et, une
+// fois la compo publiée, peut remplacer le toggle Présent/Absent d'un
+// joueur non retenu par un badge verrouillé (compositionNonSelected).
 // ===================================================================
 
 function renderScorencoWidget(equipe) {
@@ -599,6 +604,9 @@ function renderAgenda() {
     past.slice(0, 8).forEach(ev => { html += renderEventCard(ev, canManage, true); });
   }
 
+  if (window.__compositionMatchId) html += renderCompositionEditor(window.__compositionMatchId);
+  if (window.__compositionViewMatchId) html += renderCompositionPlayerView(window.__compositionViewMatchId);
+
   return html;
 }
 
@@ -697,11 +705,16 @@ function renderEventCard(ev, canManage, isPast) {
       </div>
       <div class="ev-date-full">${dateFr}${heureFmt ? " · " + heureFmt : ""}</div>
       <div class="ev-meta">${lieu || ""}${canManage ? (lieu ? " · " : "") + presentCount + " présents / " + absentCount + " absents" : ""}</div>
-      ${(!isPast && !hasRole("Bénévole")) ? (presIdentity.editable ? `<div class="toggle-group" style="margin-top:8px;">
+      ${(!isPast && !hasRole("Bénévole")) ? (
+        compositionNonSelected(ev, presIdentity.nom)
+          ? `<div class="composition-not-selected-badge">🔒 Non sélectionné</div>`
+          : (presIdentity.editable ? `<div class="toggle-group" style="margin-top:8px;">
         <button class="toggle-btn ${val === 'Oui' ? 'present' : ''}" data-event-presence="${id}" data-event-val="1">Présent</button>
         <button class="toggle-btn ${val === 'Non' ? 'absent' : ''}" data-event-presence="${id}" data-event-val="0">Absent</button>
       </div>
-      ${val === 'Non' ? renderJustifBlock(id) : ""}` : `<div class="muted" style="margin-top:8px; font-size:11.5px;">Présence de ${escapeHtml(presIdentity.nom)} : ${val === "Oui" ? "✅ Présent" : val === "Non" ? "❌ Absent" : "⏳ Pas encore répondu"}</div>`) : ""}
+      ${val === 'Non' ? renderJustifBlock(id) : ""}` : `<div class="muted" style="margin-top:8px; font-size:11.5px;">Présence de ${escapeHtml(presIdentity.nom)} : ${val === "Oui" ? "✅ Présent" : val === "Non" ? "❌ Absent" : "⏳ Pas encore répondu"}</div>`)
+      ) : ""}
+      ${renderCompositionCardButtons(ev)}
     </div>
     ${canManage ? `<div class="ev-actions">
       ${iconBtn(ICON_EDIT, "ev-edit", `data-edit-event="${id}"`)}

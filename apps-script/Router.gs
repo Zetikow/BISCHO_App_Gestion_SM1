@@ -43,6 +43,9 @@ const API_HANDLERS = {
   salariesUploadFile: api_salariesUploadFile,               // Salaries.gs
   salariesAddLink: api_salariesAddLink,                     // Salaries.gs
   salariesDelete: api_salariesDelete,                       // Salaries.gs
+  setCompositionSlot: api_setCompositionSlot,               // Compositions.gs
+  setCompositionFreePos: api_setCompositionFreePos,         // Compositions.gs
+  publishComposition: api_publishComposition,               // Compositions.gs
 };
 
 // Toute action passe par ce try/catch : sans lui, une erreur non prévue dans un handler (ex:

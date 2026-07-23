@@ -36,6 +36,10 @@ function api_getAll(ss, e) {
   });
   const osteoReservationsSheet = ss.getSheetByName("OsteoReservations");
   const osteoReservations = osteoReservationsSheet ? osteoReservationsSheet.getDataRange().getValues() : [];
+  const compositionsSheet = ss.getSheetByName("Compositions");
+  const compositions = compositionsSheet ? compositionsSheet.getDataRange().getValues() : [];
+  const compositionsMetaSheet = ss.getSheetByName("CompositionsMeta");
+  const compositionsMeta = compositionsMetaSheet ? compositionsMetaSheet.getDataRange().getValues() : [];
 
-  return jsonOut({ ok: true, grid, comptes, presences, paiements, evenements, presenceEvenements, actualites, covoiturage, osteoSlots, osteoReservations });
+  return jsonOut({ ok: true, grid, comptes, presences, paiements, evenements, presenceEvenements, actualites, covoiturage, osteoSlots, osteoReservations, compositions, compositionsMeta });
 }
