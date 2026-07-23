@@ -97,6 +97,20 @@ function migrateEvenementsFormat() {
   }
 }
 
+// Écrit une valeur en forçant le format texte (pour empêcher Sheets de convertir Date/Heure en
+// vraie Date, voir setupEvenements) quand c'est possible. Si la plage Evenements a été convertie
+// en Table Google Sheets, setNumberFormat() est refusé ("Vous ne pouvez pas définir le format
+// numérique des cellules dans une colonne saisie") — dans ce cas on écrit quand même la valeur
+// (migrateEvenementsFormat() la corrigera au prochain setup()) plutôt que de faire échouer toute
+// la création/modification de l'événement.
+function setEvenementCell(range, value) {
+  try {
+    range.setNumberFormat("@").setValue(value);
+  } catch (err) {
+    range.setValue(value);
+  }
+}
+
 // ===================== ACTIONS API =====================
 
 function api_generateSeasonTrainings(ss, e) {
@@ -141,8 +155,8 @@ function api_generateSeasonTrainings(ss, e) {
         const id = "e" + Date.now() + "_" + Math.floor(Math.random() * 1000000);
         const row = sheet.getLastRow() + 1;
         sheet.getRange(row, 1).setValue(id);
-        sheet.getRange(row, 2).setNumberFormat("@").setValue(dateStr);
-        sheet.getRange(row, 3).setNumberFormat("@").setValue(heure);
+        setEvenementCell(sheet.getRange(row, 2), dateStr);
+        setEvenementCell(sheet.getRange(row, 3), heure);
         sheet.getRange(row, 4).setValue("Entraînement");
         sheet.getRange(row, 5).setValue("Entraînement");
         sheet.getRange(row, 6).setValue(lieu);
@@ -164,8 +178,8 @@ function api_addEvenement(ss, e) {
   const id = "e" + Date.now() + "_" + Math.floor(Math.random() * 1000);
   const row = sheet.getLastRow() + 1;
   sheet.getRange(row, 1).setValue(id);
-  sheet.getRange(row, 2).setNumberFormat("@").setValue(e.parameter.date || "");
-  sheet.getRange(row, 3).setNumberFormat("@").setValue(e.parameter.heure || "");
+  setEvenementCell(sheet.getRange(row, 2), e.parameter.date || "");
+  setEvenementCell(sheet.getRange(row, 3), e.parameter.heure || "");
   sheet.getRange(row, 4).setValue(e.parameter.type || "Autre");
   sheet.getRange(row, 5).setValue(e.parameter.titre || "");
   sheet.getRange(row, 6).setValue(e.parameter.lieu || "");
@@ -184,8 +198,8 @@ function api_updateEvenement(ss, e) {
   for (let i = 1; i < data.length; i++) {
     if (data[i][0] === id) {
       const row = i + 1;
-      sheet.getRange(row, 2).setNumberFormat("@").setValue(e.parameter.date || "");
-      sheet.getRange(row, 3).setNumberFormat("@").setValue(e.parameter.heure || "");
+      setEvenementCell(sheet.getRange(row, 2), e.parameter.date || "");
+      setEvenementCell(sheet.getRange(row, 3), e.parameter.heure || "");
       sheet.getRange(row, 4).setValue(e.parameter.type || "Autre");
       sheet.getRange(row, 5).setValue(e.parameter.titre || "");
       sheet.getRange(row, 6).setValue(e.parameter.lieu || "");

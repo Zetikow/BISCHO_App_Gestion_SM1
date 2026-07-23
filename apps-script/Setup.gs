@@ -27,17 +27,21 @@ function setup() {
 }
 
 // ===================== DONNÉES DE DÉPART SPÉCIFIQUES À CE CLUB =====================
-// À exécuter UNE FOIS depuis l'éditeur pour ajouter les comptes parents/joueurs U17 — vérifie
-// automatiquement les noms déjà existants (Nom) pour ne jamais créer de doublon, même si
-// relancée plusieurs fois par erreur.
-// Entièrement propre à l'effectif U17 du club Bischo : à supprimer (ou remplacer par votre
-// propre liste) pour une autre association.
+// À exécuter UNE FOIS depuis l'éditeur pour ajouter en une fois les comptes parents/joueurs
+// d'une équipe — vérifie automatiquement les noms déjà existants (Nom) pour ne jamais créer de
+// doublon, même si relancée plusieurs fois par erreur.
+// L'effectif réel du club n'est PAS gardé ici : les comptes déjà créés vivent uniquement dans la
+// feuille "Comptes" de Google Sheets (ce repo est public — ne pas y remettre de noms complets
+// réels). Pour un nouvel effectif, remplace la liste ci-dessous avant d'exécuter (nom affiché,
+// rôle:équipe, nom complet) :
 function addU17ParentsAndPlayers() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
   const sheet = ss.getSheetByName("Comptes");
   ensureComptesSchema(sheet);
 
   const nouveauxComptes = [
+    // ["Prénom N.", "Parent:Prénom Enfant N.", "Prénom NOM"],
+    // ["Prénom Enfant N.", "Joueur:U17", "Prénom NOM"],
   ];
 
   const data = sheet.getDataRange().getValues();
