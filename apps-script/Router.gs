@@ -45,11 +45,22 @@ const API_HANDLERS = {
   salariesDelete: api_salariesDelete,                       // Salaries.gs
 };
 
+// Toute action passe par ce try/catch : sans lui, une erreur non prévue dans un handler (ex:
+// ligne de feuille manquante, colonne hors limites) fait renvoyer par Apps Script une page
+// d'erreur HTML au lieu de JSON — le frontend ne peut alors plus la parser et affiche à tort
+// "Hors ligne", alors que le serveur a bien reçu la requête mais a planté dessus. Ici, l'erreur
+// est capturée et renvoyée en JSON avec son message, visible directement dans le toast/la
+// console du navigateur, sans avoir besoin d'ouvrir les Exécutions Apps Script.
 function doGet(e) {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const handler = API_HANDLERS[e.parameter.action];
-  if (handler) return handler(ss, e);
-  return api_getAll(ss, e); // action=getAll (ou par défaut) -> tout en un seul appel, voir Sync.gs
+  try {
+    const handler = API_HANDLERS[e.parameter.action];
+    if (handler) return handler(ss, e);
+    return api_getAll(ss, e); // action=getAll (ou par défaut) -> tout en un seul appel, voir Sync.gs
+  } catch (err) {
+    Logger.log("Erreur doGet (action=" + e.parameter.action + ") : " + err);
+    return jsonOut({ ok: false, error: "server_error", detail: String(err) });
+  }
 }
 
 // Les requêtes POST (upload de fichier, payload potentiellement volumineux) sont

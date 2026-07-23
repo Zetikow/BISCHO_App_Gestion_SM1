@@ -716,7 +716,7 @@ async function addEvenementApi(date, heure, type, titre, lieu, equipe) {
   try {
     const res = await fetch(`${GOOGLE_SCRIPT_URL}?action=addEvenement&date=${encodeURIComponent(date)}&heure=${encodeURIComponent(heure)}&type=${encodeURIComponent(type)}&titre=${encodeURIComponent(titre)}&lieu=${encodeURIComponent(lieu)}&equipe=${encodeURIComponent(equipe || primaryEquipe())}&authNom=${encodeURIComponent(session.nom)}&authCode=${encodeURIComponent(session.code)}`);
     const data = await res.json();
-    showToast(data.ok ? "Ajout réussi" : "Échec de l'ajout", data.ok ? "success" : "error");
+    showToast(data.ok ? "Ajout réussi" : `Échec : ${data.error || "erreur"}${data.detail ? " — " + data.detail : ""}`, data.ok ? "success" : "error");
     if (data.ok) { showAddEvent = false; await fetchAll(); } else { render(); }
   } catch (err) { isOnline = false; showToast("Échec de l'ajout", "error"); render(); }
 }
